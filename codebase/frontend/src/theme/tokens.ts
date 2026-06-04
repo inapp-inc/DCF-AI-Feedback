@@ -1,0 +1,22 @@
+/** Feedback Analytics Solution design tokens */
+export const C = {
+  navy: "#1B3054",
+  navyDeep: "#152A47",
+  teal: "#0A8A85",
+  tealBright: "#0DAAAA",
+  tealPale: "#E8F6F5",
+  coral: "#C43A2E",
+  coralPale: "#FDF0EE",
+  amber: "#B45309",
+  amberPale: "#FFFBEB",
+  green: "#0A7A55",
+  greenPale: "#ECFDF5",
+  bg: "#F0F4FA",
+  surface: "#FFFFFF",
+  textDark: "#1B3054",
+  textMid: "#4C607A",
+  textLight: "#7A8FA8",
+  border: "#D4DEEA",
+  purple: "#6C3FBF",
+  purplePale: "#F5F3FF",
+} as const;

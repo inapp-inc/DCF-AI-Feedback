@@ -1,0 +1,3556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>iFamilyNet — DCF Case Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --bg:            #F0EDE8;
+  --surface:       #FAFAF8;
+  --surface-2:     #F2EFE9;
+  --border:        #DDD9D0;
+  --border-strong: #B8B0A2;
+  --text-primary:  #1A1714;
+  --text-secondary:#6B6459;
+  --text-muted:    #9D9589;
+
+  --navy:   #0D2340;
+  --teal:   #1B7B6A;
+  --teal-light: #E4F2EF;
+  --amber:  #C47C1A;
+  --amber-light: #FDF3E0;
+  --red:    #B83232;
+  --red-light: #FCEAEA;
+  --blue:   #1B4F8A;
+  --blue-light: #E3EDF8;
+  --purple: #4E3F8E;
+  --purple-light: #EEE9FB;
+
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-display: 'Fraunces', serif;
+
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 14px;
+  --shadow:    0 1px 3px rgba(26,23,20,.08), 0 4px 16px rgba(26,23,20,.06);
+  --shadow-lg: 0 8px 40px rgba(26,23,20,.16);
+}
+
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+/* ============================================================
+   TOPBAR
+   <!-- REACT: <TopBar /> -->
+   ============================================================ */
+.topbar {
+  background: var(--navy);
+  height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  overflow: visible; /* allow dropdown to escape */
+}
+
+.topbar-logo {
+  font-family: var(--font-display);
+  font-size: 17px;
+  color: #fff;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: .01em;
+}
+
+.topbar-logo span {
+  color: #5BB8A8;
+}
+
+.topbar-divider {
+  width: 1px;
+  height: 18px;
+  background: rgba(255,255,255,.15);
+}
+
+.topbar-context {
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  font-family: var(--font-mono);
+}
+
+.topbar-spacer { flex: 1; }
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(255,255,255,.7);
+  position: relative; /* anchor for dropdown */
+}
+
+.topbar-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.topbar-nav a {
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  transition: all .15s;
+}
+.topbar-nav a:hover { color: #fff; background: rgba(255,255,255,.08); }
+.topbar-nav a.active { color: #fff; background: rgba(255,255,255,.12); }
+
+/* ============================================================
+   PAGE LAYOUT
+   ============================================================ */
+.page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 28px 80px;
+}
+
+/* ============================================================
+   PAGE HEADER
+   <!-- REACT: <PageHeader /> -->
+   ============================================================ */
+.page-header {
+  margin-bottom: 32px;
+}
+
+.page-header-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.page-header-title {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+
+.page-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.case-id {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   STAGE PIPELINE LEGEND
+   <!-- REACT: <PipelineLegend /> -->
+   ============================================================ */
+.pipeline-legend {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 36px;
+}
+
+.pipeline-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-right: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s, color .15s;
+}
+
+.pipeline-stage:last-child { border-right: none; }
+
+.pipeline-stage:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.pipeline-stage.active {
+  background: var(--navy);
+  color: rgba(255,255,255,.9);
+}
+
+.pipeline-stage.active:hover {
+  background: #162D52;
+}
+
+/* Scrolled-to highlight — brief flash when user clicks */
+.pipeline-stage.highlight {
+  background: var(--teal-light);
+  color: var(--teal);
+}
+
+.pipeline-stage-num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: .6;
+}
+
+.pipeline-stage.active .pipeline-stage-num {
+  background: #5BB8A8;
+  border-color: #5BB8A8;
+  color: #fff;
+  opacity: 1;
+}
+
+.pipeline-stage.done .pipeline-stage-num {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  opacity: 1;
+}
+
+.pipeline-stage.done { color: var(--teal); }
+
+/* ============================================================
+   SECTION DIVIDER
+   ============================================================ */
+.section {
+  margin-bottom: 28px;
+}
+
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.section-number {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 100px;
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: .01em;
+}
+
+.section-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ============================================================
+   CARD BASE
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  position: relative;
+}
+
+.card-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.card-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ============================================================
+   GRID HELPERS
+   ============================================================ */
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 12px; margin-bottom: 14px; }
+
+/* ============================================================
+   STATUS BADGE
+   ============================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+}
+.badge-green  { background: var(--teal-light);   color: var(--teal); }
+.badge-amber  { background: var(--amber-light);  color: var(--amber); }
+.badge-red    { background: var(--red-light);    color: var(--red); }
+.badge-blue   { background: var(--blue-light);   color: var(--blue); }
+.badge-purple { background: var(--purple-light); color: var(--purple); }
+.badge-grey   { background: var(--surface-2);    color: var(--text-muted); border: 1px solid var(--border); }
+.badge-dot::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+/* ============================================================
+   TABLE
+   ============================================================ */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-table th {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  background: var(--surface-2);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--surface-2); }
+
+.mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+
+/* ============================================================
+   TIMELINE — Case Progression
+   <!-- REACT: <CaseTimeline events={events} /> -->
+   ============================================================ */
+.timeline {
+  position: relative;
+  padding-left: 28px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-event {
+  position: relative;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.timeline-event:last-child { margin-bottom: 0; }
+
+.timeline-dot {
+  position: absolute;
+  left: -22px;
+  top: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--border-strong);
+  flex-shrink: 0;
+}
+
+.timeline-dot.done    { background: var(--teal); }
+.timeline-dot.active  { background: var(--navy); box-shadow: 0 0 0 3px rgba(13,35,64,.15); }
+.timeline-dot.pending { background: var(--border); }
+.timeline-dot.alert   { background: var(--red); }
+
+.timeline-body { flex: 1; }
+
+.timeline-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.timeline-detail {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.timeline-meta {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   FEEDBACK TRIGGER BUTTON
+   <!-- REACT: <FeedbackTrigger triggerType="..." label="..." /> -->
+   ============================================================ */
+.feedback-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-sm);
+  border: 1px solid;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.feedback-trigger-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Trigger colour variants */
+.trigger-mr   { border-color: var(--purple); color: var(--purple); background: var(--purple-light); }
+.trigger-mr:hover   { background: var(--purple); color: #fff; }
+
+.trigger-vol  { border-color: var(--amber);  color: var(--amber);  background: var(--amber-light); }
+.trigger-vol:hover  { background: var(--amber); color: #fff; }
+
+.trigger-att  { border-color: var(--red);    color: var(--red);    background: var(--red-light); }
+.trigger-att:hover  { background: var(--red); color: #fff; }
+
+.trigger-fp   { border-color: var(--blue);   color: var(--blue);   background: var(--blue-light); }
+.trigger-fp:hover   { background: var(--blue); color: #fff; }
+
+.trigger-closure { border-color: var(--teal);  color: var(--teal);   background: var(--teal-light); }
+.trigger-closure:hover { background: var(--teal); color: #fff; }
+
+/* Pending / already sent variants */
+.feedback-trigger.sent {
+  border-style: dashed;
+  opacity: .55;
+  cursor: default;
+}
+
+.feedback-trigger.sent:hover {
+  background: inherit;
+  color: inherit;
+}
+
+/* ============================================================
+   FEEDBACK INDICATOR (inline in table/timeline)
+   ============================================================ */
+.feedback-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================================
+   OVERLAY BACKDROP
+   <!-- REACT: <OverlayBackdrop isOpen={} onClose={} /> -->
+   ============================================================ */
+.overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,23,40,.55);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.overlay-backdrop.open {
+  display: flex;
+  animation: backdrop-in .2s ease;
+}
+
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ============================================================
+   FEEDBACK FORM OVERLAY
+   <!-- REACT: <FeedbackFormOverlay form={currentForm} onClose={} /> -->
+   ============================================================ */
+.overlay-panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  animation: panel-in .22s cubic-bezier(.32,.72,0,1);
+  overflow: hidden;
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Overlay Header
+   <!-- REACT: <FormHeader title type onClose /> -->  */
+.overlay-header {
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.overlay-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.overlay-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.overlay-close {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 12px;
+  transition: all .15s;
+}
+.overlay-close:hover { background: var(--surface-2); color: var(--text-primary); }
+
+.overlay-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+/* ── Overlay Body (scrollable)
+   <!-- REACT: <FormBody> ... </FormBody> --> */
+.overlay-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+}
+
+/* ── AI Disclosure Banner
+   <!-- REACT: <AiDisclosureBanner onOptOut={} /> --> */
+.ai-disclosure {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--navy);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 10px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ai-disclosure-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Step Progress
+   <!-- REACT: <StepProgress steps={} currentStep={} /> --> */
+.step-progress {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 0;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  position: relative;
+}
+
+.step-item + .step-item::before {
+  content: '';
+  position: absolute;
+  left: -50%;
+  top: 11px;
+  width: 100%;
+  height: 1px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.step-item.done + .step-item::before { background: var(--teal); }
+
+.step-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  z-index: 1;
+  position: relative;
+  transition: all .2s;
+}
+
+.step-item.done  .step-circle { background: var(--teal); border-color: var(--teal); color: #fff; }
+.step-item.active .step-circle { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+.step-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.step-item.active .step-label { color: var(--text-primary); font-weight: 600; }
+
+/* ── Pre-filled Banner (AI auto-fill)
+   <!-- REACT: <AiPrefillBanner fields={} /> --> */
+.prefill-banner {
+  background: linear-gradient(135deg, #E8F4F1, #EDF6F3);
+  border: 1px solid #B8DEDA;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 11px;
+  color: var(--teal);
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+/* ── Form Groups
+   <!-- REACT: <FormGroup label required hint> ... </FormGroup> --> */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.form-label .req { color: var(--red); margin-left: 2px; }
+.form-hint { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
+
+/* ── Inputs
+   <!-- REACT: <Input />, <Select />, <Textarea /> --> */
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 11px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-primary);
+  background: #fff;
+  outline: none;
+  transition: border-color .15s;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 3px rgba(13,35,64,.06);
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239D9589' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 11px center;
+  cursor: pointer;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-char-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  margin-top: 4px;
+}
+
+/* ── Likert Scale
+   <!-- REACT: <LikertScale question label onChange value /> --> */
+.likert {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.likert-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 4px 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--text-secondary);
+  background: #fff;
+  line-height: 1;
+  -webkit-user-select: none;
+  user-select: none;
+  text-align: center;
+}
+
+.likert-option:hover {
+  border-color: var(--navy);
+  background: var(--surface-2);
+}
+
+.likert-option.selected {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+
+.likert-emoji { font-size: 18px; }
+.likert-num   { font-size: 11px; font-weight: 700; }
+.likert-text  { font-size: 9px; font-weight: 500; line-height: 1.2; opacity: .8; }
+.likert-labels { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-muted); margin-top: 4px; }
+
+/* ── Checkbox Group
+   <!-- REACT: <CheckboxGroup options={} value={} onChange={} /> --> */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: #fff;
+  transition: all .15s;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.checkbox-option:hover { border-color: var(--navy); background: var(--surface-2); }
+
+.checkbox-option.selected { border-color: var(--teal); background: var(--teal-light); }
+
+.checkbox-box {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  flex-shrink: 0;
+  transition: all .15s;
+}
+
+.checkbox-option.selected .checkbox-box {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+/* ── Yes / No
+   <!-- REACT: <YesNoField question value onChange /> --> */
+.yesno {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.yesno-btn {
+  flex: 1;
+  padding: 9px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .15s;
+  color: var(--text-secondary);
+}
+
+.yesno-btn:hover { border-color: var(--navy); background: var(--surface-2); }
+.yesno-btn.yes.selected { border-color: var(--teal); background: var(--teal-light); color: var(--teal); }
+.yesno-btn.no.selected  { border-color: var(--red);  background: var(--red-light);  color: var(--red); }
+
+/* ── AI Assist Box
+   <!-- REACT: <AiAssistBox category urgency isVisible /> --> */
+.ai-assist {
+  border: 1.5px solid var(--teal);
+  background: var(--teal-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--teal);
+  display: none;
+  align-items: flex-start;
+  gap: 8px;
+  animation: assist-in .2s ease;
+}
+
+.ai-assist.visible { display: flex; }
+
+@keyframes assist-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.ai-assist-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-bottom: 3px;
+  opacity: .7;
+}
+
+/* ── Privilege Tag Notice
+   <!-- REACT: <PrivilegeTagNotice /> --> only shown for Attorney forms */
+.privilege-notice {
+  background: var(--red-light);
+  border: 1px solid var(--red);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 10px;
+  color: var(--red);
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+/* ── Attestation Field
+   <!-- REACT: <AttestationField value onChange /> --> only shown for Attorney forms */
+.attestation {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: var(--surface-2);
+  margin-top: 4px;
+}
+
+.attestation-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.attestation-sig {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.attestation-input {
+  flex: 1;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-style: italic;
+  color: var(--navy);
+  background: #fff;
+  outline: none;
+}
+
+.attestation-input:focus { border-color: var(--navy); }
+
+/* ── Overlay Footer
+   <!-- REACT: <FormFooter onBack onNext onSubmit isLastStep /> --> */
+.overlay-footer {
+  padding: 14px 22px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.footer-left { display: flex; gap: 7px; }
+.footer-right { display: flex; gap: 7px; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid;
+  transition: all .15s;
+}
+
+.btn-ghost {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { border-color: var(--border-strong); color: var(--text-primary); background: var(--surface-2); }
+
+.btn-primary {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #fff;
+}
+.btn-primary:hover { background: #162D52; border-color: #162D52; }
+
+.btn-submit {
+  border-color: var(--teal);
+  background: var(--teal);
+  color: #fff;
+}
+.btn-submit:hover { background: #156B5C; border-color: #156B5C; }
+
+/* ── Processing / Success states
+   <!-- REACT: <ProcessingState /> and <SuccessState onDone /> --> */
+.processing-state, .success-state {
+  padding: 40px 22px;
+  text-align: center;
+}
+
+.processing-steps {
+  margin: 18px 0;
+  text-align: left;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.proc-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.proc-step.done   { color: var(--teal); }
+.proc-step.active { color: var(--text-primary); font-weight: 500; }
+
+.proc-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  flex-shrink: 0;
+  transition: all .3s;
+}
+
+.proc-dot.done   { background: var(--teal); border-color: var(--teal); color: #fff; }
+.proc-dot.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 11px; height: 11px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  display: inline-block;
+}
+
+.success-icon {
+  font-size: 42px;
+  margin-bottom: 12px;
+}
+
+.success-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 300;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+
+.success-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  max-width: 320px;
+  margin: 0 auto 20px;
+  line-height: 1.7;
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0;
+  text-align: left;
+}
+
+.result-cell {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+}
+
+.result-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.result-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ============================================================
+   SCROLL TO TOP BUTTON
+   ============================================================ */
+.scroll-top-btn {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(13,35,64,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .22s, transform .22s, background .15s;
+  z-index: 40;
+  pointer-events: none;
+}
+
+.scroll-top-btn.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.scroll-top-btn:hover { background: #162D52; }
+
+/* ============================================================
+   USER DROPDOWN MENU
+   ============================================================ */
+.topbar-user {
+  cursor: pointer;
+  position: relative;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  transition: background .15s;
+  user-select: none;
+}
+.topbar-user:hover { background: rgba(255,255,255,.08); }
+
+.user-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  display: none;
+  overflow: hidden;
+  animation: panel-in .18s cubic-bezier(.32,.72,0,1);
+}
+
+.user-menu.open { display: block; }
+
+.user-menu-header {
+  padding: 12px 14px 10px;
+  background: var(--surface-2);
+}
+
+.user-menu-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.user-menu-role {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.user-menu-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.user-menu-item {
+  padding: 9px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-menu-item:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.user-menu-item.admin {
+  color: var(--navy);
+  font-weight: 500;
+}
+
+.user-menu-item.admin:hover {
+  background: var(--blue-light);
+}
+
+/* ============================================================
+   ADMIN FORM CONFIGURATOR PANEL
+   ============================================================ */
+.admin-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(13,23,40,.6);
+  backdrop-filter: blur(4px);
+  z-index: 400;
+  display: none;
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.admin-backdrop.open { display: flex; }
+
+.admin-panel {
+  width: 860px;
+  max-width: 96vw;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  animation: slide-in-right .24s cubic-bezier(.32,.72,0,1);
+  overflow: hidden;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--navy);
+}
+
+.admin-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: rgba(255,255,255,.4);
+  margin-bottom: 3px;
+}
+
+.admin-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 300;
+  font-style: italic;
+  color: #fff;
+}
+
+.admin-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Sidebar — form selector */
+.admin-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--surface-2);
+}
+
+.admin-sidebar-item {
+  padding: 11px 14px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  transition: all .12s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sidebar-item:hover { background: var(--surface); color: var(--text-primary); }
+
+.admin-sidebar-item.active {
+  background: var(--surface);
+  color: var(--navy);
+  font-weight: 600;
+  border-left: 3px solid var(--navy);
+  padding-left: 11px;
+}
+
+.admin-sidebar-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* Editor — right pane */
+.admin-editor {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+/* Editor sections */
+.admin-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-section:last-child { border-bottom: none; }
+
+.admin-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+}
+
+/* Question row in admin editor */
+.admin-q-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  margin-bottom: 7px;
+  transition: box-shadow .13s;
+}
+
+.admin-q-row:hover { box-shadow: 0 2px 8px rgba(13,35,64,.07); }
+
+.admin-q-handle {
+  color: var(--text-muted);
+  cursor: grab;
+  font-size: 14px;
+  flex-shrink: 0;
+  padding-top: 2px;
+  user-select: none;
+}
+
+.admin-q-body { flex: 1; min-width: 0; }
+
+.admin-q-type {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.admin-q-label-input {
+  width: 100%;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 4px 7px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-primary);
+  background: transparent;
+  outline: none;
+  transition: border-color .13s, background .13s;
+}
+
+.admin-q-label-input:hover { background: var(--surface-2); border-color: var(--border); }
+.admin-q-label-input:focus { background: #fff; border-color: var(--navy); }
+
+.admin-q-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.admin-q-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .12s;
+}
+
+.admin-q-btn:hover { border-color: var(--navy); color: var(--navy); background: var(--surface); }
+.admin-q-btn.del:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+
+/* Step tabs in editor */
+.admin-step-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.admin-step-tab {
+  padding: 4px 12px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  transition: all .13s;
+}
+
+.admin-step-tab:hover { border-color: var(--navy); color: var(--navy); }
+.admin-step-tab.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+/* Add question button */
+.admin-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 100%;
+  transition: all .13s;
+  margin-top: 4px;
+}
+
+.admin-add-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-light); }
+
+/* Type selector pills */
+.type-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.type-pill {
+  padding: 4px 10px;
+  border-radius: 100px;
+  border: 1.5px solid var(--border);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+  color: var(--text-secondary);
+  transition: all .12s;
+}
+
+.type-pill:hover { border-color: var(--teal); color: var(--teal); }
+
+/* Toggle */
+.admin-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.admin-toggle {
+  width: 34px;
+  height: 19px;
+  border-radius: 10px;
+  background: var(--border);
+  position: relative;
+  cursor: pointer;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+
+.admin-toggle.on { background: var(--teal); }
+
+.admin-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+}
+
+.admin-toggle.on::after { transform: translateX(15px); }
+
+/* Save confirmation toast */
+.save-toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--navy);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: all .25s;
+  z-index: 500;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.save-toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     TOPBAR
+     REACT: decompose as <TopBar />
+     ============================================================ -->
+<nav class="topbar">
+  <div class="topbar-logo">iFamily<span>Net</span></div>
+  <div class="topbar-divider"></div>
+  <div class="topbar-context">Commonwealth of Massachusetts · DCF</div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-user" id="user-btn" onclick="toggleUserMenu(event)">
+    <div class="topbar-avatar">JT</div>
+    Jennifer Torres
+    <span style="font-size:9px;opacity:.5;margin-left:2px">&#9662;</span>
+  </div>
+
+  <!-- User dropdown menu -->
+  <div class="user-menu" id="user-menu">
+    <div class="user-menu-header">
+      <div class="user-menu-name">Jennifer Torres</div>
+      <div class="user-menu-role">DCF Supervisor · Boston North</div>
+    </div>
+    <div class="user-menu-divider"></div>
+    <div class="user-menu-item" onclick="closeUserMenu()">&#128100; My profile</div>
+    <div class="user-menu-item" onclick="closeUserMenu()">&#128276; Notifications</div>
+    <div class="user-menu-item" onclick="closeUserMenu()">&#9881; Preferences</div>
+    <div class="user-menu-divider"></div>
+    <div class="user-menu-item admin" onclick="openAdminPanel()">&#128295; Admin — Form configurator</div>
+    <div class="user-menu-divider"></div>
+    <div class="user-menu-item" onclick="closeUserMenu()">&#8617; Sign out</div>
+  </div>
+</nav>
+
+
+<!-- ============================================================
+     PAGE CONTAINER
+     ============================================================ -->
+<main class="page">
+
+  <!-- ============================================================
+       PAGE HEADER
+       REACT: <PageHeader caseId="MA-2026-0847" status="active" office="Boston North" />
+       ============================================================ -->
+  <header class="page-header">
+    <div class="page-header-eyebrow">Case record</div>
+    <h1 class="page-header-title">Johnson family — active case</h1>
+    <div class="page-header-meta">
+      <span class="case-id">MA-2026-0847</span>
+      <span class="badge badge-green badge-dot">Active investigation</span>
+      <span>Boston North</span>
+      <span>·</span>
+      <span>Opened March 14, 2026</span>
+      <span>·</span>
+      <span>Assigned caseworker: J. Torres</span>
+    </div>
+  </header>
+
+
+  <!-- ============================================================
+       PIPELINE LEGEND — 6 BRD workflow stages
+       REACT: <PipelineLegend currentStage={4} />
+       Stages map directly to BRD Section 5 "Intake Process Overview"
+       ============================================================ -->
+  <div class="pipeline-legend" id="pipeline-legend">
+    <div class="pipeline-stage done" id="ps-section-intake" onclick="stageClick('section-intake')">
+      <div class="pipeline-stage-num">1</div>
+      Hotline contact
+    </div>
+    <div class="pipeline-stage done" id="ps-section-investigation" onclick="stageClick('section-investigation')">
+      <div class="pipeline-stage-num">2</div>
+      51A filing
+    </div>
+    <div class="pipeline-stage done" id="ps-section-investigation2" onclick="stageClick('section-investigation')">
+      <div class="pipeline-stage-num">3</div>
+      Investigation
+    </div>
+    <div class="pipeline-stage active" id="ps-section-placement" onclick="stageClick('section-placement')">
+      <div class="pipeline-stage-num">4</div>
+      Placement
+    </div>
+    <div class="pipeline-stage" id="ps-section-legal" onclick="stageClick('section-legal')">
+      <div class="pipeline-stage-num">5</div>
+      Legal process
+    </div>
+    <div class="pipeline-stage" id="ps-section-closure" onclick="stageClick('section-closure')">
+      <div class="pipeline-stage-num">6</div>
+      Case closure
+    </div>
+  </div>
+
+
+  <!-- ============================================================
+       SECTION 1 — 51A INTAKE RECORD
+       BRD ref: Stage 1–2 of intake process
+       REACT: <IntakeSection filing={filing} />
+       ============================================================ -->
+  <section class="section" id="section-intake">
+    <div class="section-header">
+      <span class="section-number">Stage 1–2</span>
+      <span class="section-title">51A Intake &amp; Filing</span>
+      <span class="section-subtitle">Completed March 14, 2026</span>
+    </div>
+
+    <div class="grid-2-1">
+
+      <!-- Filing details -->
+      <div class="card">
+        <div class="grid-4" style="margin-bottom:0">
+          <div>
+            <div class="card-label">Filing reference</div>
+            <div class="card-value mono">51A-2026-04412</div>
+          </div>
+          <div>
+            <div class="card-label">Filing outcome</div>
+            <div class="card-value">
+              <span class="badge badge-green">51A Accepted</span>
+            </div>
+          </div>
+          <div>
+            <div class="card-label">Reporter category</div>
+            <div class="card-value" style="font-size:12px">Healthcare professional</div>
+          </div>
+          <div>
+            <div class="card-label">Screener assigned</div>
+            <div class="card-value" style="font-size:12px">D. Nguyen</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feedback trigger: Mandated Reporter post-51A survey
+           BRD ref: MR-01 — triggered 5–7 days post 51A filing
+           REACT: <FeedbackTriggerCard
+                    triggerType="mandated-reporter"
+                    triggerRef="51A-2026-04412"
+                    brdRef="MR-01"
+                    status="dispatched"
+                    scheduledDate="March 21, 2026"
+                    onOpen={openForm}
+                  /> -->
+      <div class="card" style="border-color: #C4AEF5; background: var(--purple-light);">
+        <div class="card-label" style="color:var(--purple)">Feedback trigger · MR-01</div>
+        <div style="font-size:12px;font-weight:600;color:var(--purple);margin-bottom:6px">Mandated reporter survey</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;line-height:1.6">
+          Auto-dispatched 7 days after 51A filing.<br/>
+          Surveys hotline quality &amp; screener performance.
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="badge badge-amber">Survey sent</span>
+          <button class="feedback-trigger trigger-mr" onclick="openForm('mr')">
+            <span class="feedback-trigger-icon">✎</span>
+            Preview form
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 2 — INVESTIGATION & CASEWORK
+       BRD ref: Stage 3 of intake process
+       REACT: <InvestigationSection caseNotes={} caseworker={} />
+       ============================================================ -->
+  <section class="section" id="section-investigation">
+    <div class="section-header">
+      <span class="section-number">Stage 3</span>
+      <span class="section-title">Investigation &amp; Casework</span>
+      <span class="section-subtitle">Completed April 2, 2026</span>
+    </div>
+
+    <div class="grid-2">
+
+      <div class="card">
+        <div class="card-label">Investigation summary</div>
+        <div class="grid-3" style="margin-top:10px">
+          <div>
+            <div class="card-label">Opened</div>
+            <div class="card-value mono" style="font-size:12px">Mar 14</div>
+          </div>
+          <div>
+            <div class="card-label">Decision</div>
+            <div class="card-value"><span class="badge badge-amber">Substantiated</span></div>
+          </div>
+          <div>
+            <div class="card-label">Decision date</div>
+            <div class="card-value mono" style="font-size:12px">Apr 2</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-muted)">
+          Caseworker home visits completed on Mar 18, Mar 25, Apr 1. Service plan initiated Apr 3.
+        </div>
+      </div>
+
+      <!-- Volunteer event attached to this case
+           BRD ref: VOL-01/02 — 48h post event completion
+           REACT: <FeedbackTriggerCard
+                    triggerType="volunteer"
+                    triggerRef="EVT-2026-0388"
+                    brdRef="VOL-01"
+                    status="pending"
+                    onOpen={openForm}
+                  /> -->
+      <div class="card" style="border-color: #F0D4A0; background: var(--amber-light);">
+        <div class="card-label" style="color:var(--amber)">Feedback trigger · VOL-01</div>
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:6px">Volunteer event survey</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:10px;line-height:1.6">
+          Community support event EVT-2026-0388 completed.<br/>
+          Survey fires within 48 hrs of event marked <em>Completed</em>.
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="badge badge-red badge-dot">Awaiting dispatch</span>
+          <button class="feedback-trigger trigger-vol" onclick="openForm('vol')">
+            <span class="feedback-trigger-icon">✎</span>
+            Preview form
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 3 — PLACEMENT
+       BRD ref: Stage 4 — placement decision & foster parent matching
+       REACT: <PlacementSection placement={placement} milestones={milestones} />
+       ============================================================ -->
+  <section class="section" id="section-placement">
+    <div class="section-header">
+      <span class="section-number">Stage 4</span>
+      <span class="section-title">Placement &amp; Foster Parent Milestones</span>
+      <span class="section-subtitle">Active — Day 63 of placement</span>
+    </div>
+
+    <!-- Placement header card -->
+    <div class="card" style="margin-bottom:12px">
+      <div class="grid-4" style="margin-bottom:0">
+        <div>
+          <div class="card-label">Placement ID</div>
+          <div class="card-value mono">PL-2839</div>
+        </div>
+        <div>
+          <div class="card-label">Foster family</div>
+          <div class="card-value" style="font-size:12px">Ferreira household</div>
+        </div>
+        <div>
+          <div class="card-label">Placement date</div>
+          <div class="card-value mono" style="font-size:12px">Mar 28, 2026</div>
+        </div>
+        <div>
+          <div class="card-label">Current day</div>
+          <div class="card-value">
+            Day 63 <span class="badge badge-blue" style="margin-left:4px">Active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Milestone feedback triggers
+         BRD ref: FP-01 — longitudinal survey at D30/D60/D90 and case closure
+         Each row = one BRD-defined milestone trigger
+         REACT: <MilestoneFeedbackTable placement={placement} onOpen={openForm} /> -->
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>BRD ref</th>
+            <th>Trigger date</th>
+            <th>Survey domains</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Day 30 milestone — completed -->
+          <tr>
+            <td><strong>Day 30</strong></td>
+            <td><span class="mono">FP-01</span></td>
+            <td><span class="mono">Apr 27, 2026</span></td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Visit quality · Support · Stipend
+            </td>
+            <td>
+              <span class="badge badge-green badge-dot">Submitted</span>
+            </td>
+            <td>
+              <button class="feedback-trigger trigger-fp sent" disabled>
+                ✓ Submitted
+              </button>
+            </td>
+          </tr>
+
+          <!-- Day 60 milestone — pending, the key trigger -->
+          <tr style="background: #F5F1FF08;">
+            <td><strong>Day 60</strong></td>
+            <td><span class="mono">FP-01</span></td>
+            <td><span class="mono">May 27, 2026</span></td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Visit quality · Complex needs · Responsiveness
+            </td>
+            <td>
+              <span class="badge badge-amber badge-dot">Survey dispatched</span>
+            </td>
+            <td>
+              <!-- REACT: <FeedbackTriggerButton
+                            type="fp"
+                            milestone="day60"
+                            placementId="PL-2839"
+                            onClick={() => openForm('fp', {milestone:'day60'})}
+                          /> -->
+              <button class="feedback-trigger trigger-fp" onclick="openForm('fp')">
+                <span class="feedback-trigger-icon">✎</span>
+                Open Day 60 form
+              </button>
+            </td>
+          </tr>
+
+          <!-- Day 90 milestone — upcoming -->
+          <tr>
+            <td><strong>Day 90</strong></td>
+            <td><span class="mono">FP-01</span></td>
+            <td><span class="mono">Jun 26, 2026</span></td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Visit quality · Stability · Overall satisfaction
+            </td>
+            <td>
+              <span class="badge badge-grey">Upcoming</span>
+            </td>
+            <td>
+              <button class="feedback-trigger trigger-fp sent" disabled>
+                Not yet due
+              </button>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 4 — LEGAL PROCESS
+       BRD ref: Stage 5 — legal filings, service plan, attorney reviews
+       REACT: <LegalSection milestones={legalMilestones} onOpen={openForm} />
+       ============================================================ -->
+  <section class="section" id="section-legal">
+    <div class="section-header">
+      <span class="section-number">Stage 5</span>
+      <span class="section-title">Legal Process &amp; Document Milestones</span>
+      <span class="section-subtitle">2 milestones open</span>
+    </div>
+
+    <!-- Attorney milestone feedback triggers
+         BRD ref: ATT-01 — triggered on legal milestone date
+         REACT: <LegalMilestoneTable milestones={} onOpen={openForm} /> -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Milestone</th>
+            <th>BRD ref</th>
+            <th>Due date</th>
+            <th>Attorney</th>
+            <th>Feedback domains</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Service plan review — overdue -->
+          <tr>
+            <td>
+              <strong>Service plan review</strong><br/>
+              <span class="mono">MA-2026-1182</span>
+            </td>
+            <td><span class="mono">ATT-01</span></td>
+            <td><span class="mono" style="color:var(--red)">May 24 ⚠</span></td>
+            <td style="font-size:11px">P. Nair</td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Doc timeliness · Completeness · Adherence
+            </td>
+            <td>
+              <span class="badge badge-red badge-dot">Overdue</span>
+            </td>
+            <td>
+              <!-- REACT: <FeedbackTriggerButton
+                            type="att"
+                            milestoneId="MA-2026-1182"
+                            caseId="MA-2026-0847"
+                            onClick={() => openForm('att')}
+                          /> -->
+              <button class="feedback-trigger trigger-att" onclick="openForm('att')">
+                <span class="feedback-trigger-icon">⚖</span>
+                Legal milestone form
+              </button>
+            </td>
+          </tr>
+
+          <!-- Document production — due soon -->
+          <tr>
+            <td>
+              <strong>Document production</strong><br/>
+              <span class="mono">MA-2026-1155</span>
+            </td>
+            <td><span class="mono">ATT-01</span></td>
+            <td><span class="mono" style="color:var(--amber)">May 28</span></td>
+            <td style="font-size:11px">P. Nair</td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Doc production · Case record · Communication
+            </td>
+            <td>
+              <span class="badge badge-amber badge-dot">Due soon</span>
+            </td>
+            <td>
+              <button class="feedback-trigger trigger-att" onclick="openForm('att')">
+                <span class="feedback-trigger-icon">⚖</span>
+                Legal milestone form
+              </button>
+            </td>
+          </tr>
+
+          <!-- Case closure — not yet due -->
+          <tr>
+            <td>
+              <strong>Case closure</strong><br/>
+              <span class="mono">MA-2026-1101</span>
+            </td>
+            <td><span class="mono">ATT-01, FP-01</span></td>
+            <td><span class="mono">Jun 3, 2026</span></td>
+            <td style="font-size:11px">P. Nair</td>
+            <td style="font-size:11px;color:var(--text-muted)">
+              Outcome satisfaction · Process adherence
+            </td>
+            <td>
+              <span class="badge badge-grey">Upcoming</span>
+            </td>
+            <td>
+              <button class="feedback-trigger trigger-att sent" disabled>
+                Not yet due
+              </button>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 5 — CASE CLOSURE
+       BRD ref: Stage 6 — case closure survey for Foster Parent & Attorney
+       REACT: <CaseClosureSection caseId="MA-2026-0847" status="upcoming" onOpen={openForm} />
+       ============================================================ -->
+  <section class="section" id="section-closure">
+    <div class="section-header">
+      <span class="section-number">Stage 6</span>
+      <span class="section-title">Case Closure</span>
+      <span class="section-subtitle">Not yet initiated</span>
+    </div>
+
+    <div class="grid-2">
+
+      <!-- Closure overview card -->
+      <div class="card">
+        <div class="card-label">Case closure status</div>
+        <div style="margin-top:8px">
+          <span class="badge badge-grey" style="margin-bottom:10px;display:inline-flex">Closure not yet initiated</span>
+          <div style="font-size:11px;color:var(--text-muted);line-height:1.7;margin-top:6px">
+            Case closure surveys are dispatched to both the foster parent and the
+            supervising attorney within 7 days of a case closure event being recorded
+            in iFamilyNet. AI generates a CFSR evidence summary on submission.
+          </div>
+          <div style="margin-top:12px;font-size:11px;color:var(--text-muted)">
+            <strong>BRD ref:</strong> FP-07 (foster parent), ATT-01 (attorney), FP-09 (AI closure summary)
+          </div>
+        </div>
+      </div>
+
+      <!-- Closure feedback triggers (both user groups)
+           BRD ref: FP-07 + ATT-01 + generative summary at closure
+           REACT: <ClosureFeedbackTriggers
+                    fpStatus="upcoming"
+                    attStatus="upcoming"
+                    onOpen={openForm}
+                  /> -->
+      <div class="card">
+        <div class="card-label">Closure feedback triggers</div>
+
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px">
+
+          <!-- Foster parent closure survey -->
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:500">Foster parent — case closure survey</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">
+                Overall satisfaction · Narrative (1,000 chars) · BRD: FP-07
+              </div>
+            </div>
+            <!-- REACT: <FeedbackTriggerButton type="closure-fp" onClick={} /> -->
+            <button class="feedback-trigger trigger-closure" onclick="openForm('closure')">
+              <span class="feedback-trigger-icon">✎</span>
+              Preview
+            </button>
+          </div>
+
+          <!-- Attorney closure survey -->
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:#fff">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:500">Attorney — case closure form</div>
+              <div style="font-size:10px;color:var(--text-muted);margin-top:2px">
+                Process adherence · Outcome satisfaction · BRD: ATT-01
+              </div>
+            </div>
+            <!-- REACT: <FeedbackTriggerButton type="closure-att" onClick={} /> -->
+            <button class="feedback-trigger trigger-att" onclick="openForm('closure-att')">
+              <span class="feedback-trigger-icon">⚖</span>
+              Preview
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ============================================================
+       SECTION 6 — CASE TIMELINE
+       BRD ref: full audit trail of all feedback trigger events
+       REACT: <CaseTimeline events={caseEvents} />
+       ============================================================ -->
+  <section class="section" id="section-timeline">
+    <div class="section-header">
+      <span class="section-number">Audit trail</span>
+      <span class="section-title">Case event &amp; feedback timeline</span>
+    </div>
+
+    <div class="card">
+      <div class="timeline">
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">51A filed — investigation accepted</div>
+            <div class="timeline-detail">Reporter: healthcare professional · Screener: D. Nguyen · Outcome: 51A accepted</div>
+            <div class="timeline-meta">Mar 14, 2026 · 09:41 · <span class="badge badge-green" style="font-size:9px">Feedback trigger MR-01 queued</span></div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Mandated reporter survey dispatched</div>
+            <div class="timeline-detail">Survey link sent to reporter's registered email. Token: single-use, 14-day expiry. Ref: 51A-2026-04412</div>
+            <div class="timeline-meta">Mar 21, 2026 · 08:00 · BRD: MR-01, MR-04, MR-06</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Mandated reporter survey submitted</div>
+            <div class="timeline-detail">NLP classification: Screener quality (confidence 94%). Sentiment: 2.1/5. Urgency: Medium. Closed-loop response sent 22 hrs later.</div>
+            <div class="timeline-meta">Mar 22, 2026 · 14:33 · AI processed in 1.4s</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Placement created — Ferreira household</div>
+            <div class="timeline-detail">Placement ID: PL-2839 · Foster parent matched via iFamilyNet · Day 30/60/90 feedback sequence initiated</div>
+            <div class="timeline-meta">Mar 28, 2026 · 11:00 · BRD: FP-01 sequence started</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Volunteer community event completed — EVT-2026-0388</div>
+            <div class="timeline-detail">Event marked Completed in iFamilyNet. 48-hour survey dispatch window opened. BRD: VOL-01, VOL-02</div>
+            <div class="timeline-meta">Apr 1, 2026 · 16:20</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Placement Day 30 survey submitted</div>
+            <div class="timeline-detail">Score: 4.5/5. Caseworker visit quality rated highly. No stability alert triggered. BRD: FP-01, FP-05</div>
+            <div class="timeline-meta">Apr 27, 2026 · 10:15</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Legal milestone — service plan review due</div>
+            <div class="timeline-detail">Milestone form generated and dispatched to P. Nair (attorney). Case ID linked: MA-2026-1182. Privilege tagging applied. BRD: ATT-01, ATT-03, ATT-08</div>
+            <div class="timeline-meta">May 24, 2026 · 08:00</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot active"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Placement Day 60 survey dispatched — pending</div>
+            <div class="timeline-detail">Survey sent to Ferreira household. Awaiting submission. Reminder scheduled if not submitted within 5 days. BRD: FP-01, FP-04</div>
+            <div class="timeline-meta">May 27, 2026 · 08:00 · <span class="badge badge-amber" style="font-size:9px">Awaiting response</span></div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot pending"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Legal milestone — document production due</div>
+            <div class="timeline-detail">Milestone form will be dispatched to P. Nair. BRD: ATT-01</div>
+            <div class="timeline-meta">May 28, 2026 · Scheduled</div>
+          </div>
+        </div>
+
+        <div class="timeline-event">
+          <div class="timeline-dot pending"></div>
+          <div class="timeline-body">
+            <div class="timeline-title">Case closure &amp; final surveys</div>
+            <div class="timeline-detail">Foster parent + attorney closure surveys will fire within 7 days of case closure. AI will generate CFSR evidence summary. BRD: FP-07, ATT-01</div>
+            <div class="timeline-meta">Pending · Est. Jun 3, 2026</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+</main><!-- /page -->
+
+
+<!-- ============================================================
+     SCROLL TO TOP BUTTON
+     REACT: <ScrollToTopButton visible={scrollY > 300} />
+     ============================================================ -->
+<button class="scroll-top-btn" id="scroll-top-btn" onclick="scrollToTop()" title="Back to top">&#8679;</button>
+
+
+<!-- ============================================================
+     ADMIN FORM CONFIGURATOR PANEL
+     REACT: <AdminPanel isOpen={adminOpen} onClose={closeAdminPanel}
+                        formConfigs={FORM_CONFIGS} onSave={handleSave} />
+     ============================================================ -->
+<div class="admin-backdrop" id="admin-backdrop" onclick="handleAdminBackdropClick(event)">
+  <div class="admin-panel" id="admin-panel" onclick="event.stopPropagation()">
+    <div class="admin-header">
+      <div>
+        <div class="admin-eyebrow">Admin</div>
+        <div class="admin-title">Form configurator</div>
+      </div>
+      <button class="overlay-close" onclick="closeAdminPanel()">&#10005;</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-sidebar" id="admin-sidebar"></div>
+      <div class="admin-editor" id="admin-editor"></div>
+    </div>
+    <div class="admin-footer">
+      <div style="font-size:11px;color:var(--text-muted)">Changes apply immediately to all trigger forms on this page.</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="resetFormConfig()">Reset to defaults</button>
+        <button class="btn btn-submit" onclick="saveFormConfig()">Save changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     OVERLAY BACKDROP
+     REACT: decompose as <OverlayBackdrop isOpen={overlayOpen} onClose={closeOverlay} />
+     ============================================================ -->
+<div class="overlay-backdrop" id="overlay-backdrop" onclick="handleBackdropClick(event)">
+
+  <!-- ============================================================
+       OVERLAY PANEL
+       REACT: <FeedbackFormOverlay formConfig={currentForm} onClose={closeOverlay} />
+       This entire panel becomes a single React component that receives
+       a formConfig object describing the title, steps, questions, and
+       BRD metadata. The form rendering logic is fully data-driven.
+       ============================================================ -->
+  <div class="overlay-panel" id="overlay-panel" onclick="event.stopPropagation()">
+
+    <!-- OVERLAY HEADER — injected by JS, becomes <FormHeader /> in React -->
+    <div class="overlay-header" id="overlay-header"></div>
+
+    <!-- OVERLAY BODY — injected by JS, becomes <FormBody /> in React -->
+    <div class="overlay-body" id="overlay-body"></div>
+
+    <!-- OVERLAY FOOTER — injected by JS, becomes <FormFooter /> in React -->
+    <div class="overlay-footer" id="overlay-footer"></div>
+
+  </div>
+</div><!-- /overlay-backdrop -->
+
+
+<!-- ============================================================
+     JAVASCRIPT
+     NOTE FOR REACT DECOMPOSITION:
+     Each FORM_CONFIGS entry becomes a prop/config object passed to
+     <FeedbackFormOverlay>. The step rendering logic (renderStep) becomes
+     the body of a <FormStep> component. State (currentStep, answers, etc.)
+     moves into React useState hooks.
+     ============================================================ -->
+<script>
+
+// ── FORM CONFIGS ─────────────────────────────────────────────────
+// REACT: export these as a typed config object / JSON schema
+// Each config maps to one BRD feedback trigger
+
+var FORM_CONFIGS = {
+
+  /* ── Mandated Reporter post-51A survey
+     BRD: MR-01 through MR-09
+     Trigger: 5-7 days after 51A filing
+     REACT prop name: MandatedReporterFormConfig */
+  mr: {
+    title: "Post-51A Feedback Survey",
+    userGroup: "Mandated Reporter",
+    triggerRef: "51A-2026-04412",
+    brdRef: "MR-01 - MR-09",
+    color: "#4E3F8E",
+    colorLight: "#EEE9FB",
+    prefill: { "Reporter category": "Healthcare professional", "Filing reference": "51A-2026-04412", "Area office": "Boston North" },
+    steps: ["About you", "Hotline experience", "Screener quality", "Overall"],
+    /* Each question maps to one BRD requirement (brdRef) */
+    questions: [
+      /* Step 0  -  About you */
+      { step: 0, type: "dropdown", id: "q_role",
+        label: "Which best describes your professional role as a mandated reporter?",
+        brdRef: "MR-09", required: true,
+        options: ["Healthcare professional", "Educator / school staff", "Law enforcement", "Social worker / counsellor", "Childcare provider", "Other"]
+      },
+      { step: 0, type: "yesno", id: "q_first_time",
+        label: "Is this your first time filing a 51A report?",
+        brdRef: "MR-09", required: true
+      },
+      /* Step 1  -  Hotline experience */
+      { step: 1, type: "likert", id: "q_wait_time",
+        label: "How would you rate the hotline wait time before reaching a screener?",
+        brdRef: "MR-02", required: true
+      },
+      { step: 1, type: "likert", id: "q_call_clarity",
+        label: "How clearly was the purpose of the call explained to you at the start?",
+        brdRef: "MR-02", required: true
+      },
+      /* Step 2  -  Screener quality */
+      { step: 2, type: "likert", id: "q_screener_prof",
+        label: "How professional was the screener during your call?",
+        brdRef: "MR-02", required: true
+      },
+      { step: 2, type: "likert", id: "q_next_steps",
+        label: "How clearly were the next steps explained after your report was filed?",
+        brdRef: "MR-02", required: true
+      },
+      { step: 2, type: "likert", id: "q_notification",
+        label: "How satisfied are you with the timeliness of the outcome notification?",
+        brdRef: "MR-02", required: true
+      },
+      { step: 2, type: "checkbox", id: "q_improve",
+        label: "Which areas need the most improvement? (select all that apply)",
+        brdRef: "MR-09", required: false,
+        options: ["Hotline wait time", "Screener professionalism", "Clarity of information", "Follow-up communication", "Outcome notification speed"]
+      },
+      /* Step 3  -  Overall */
+      { step: 3, type: "likert", id: "q_overall",
+        label: "Overall, how satisfied are you with your experience contacting DCF?",
+        brdRef: "MR-02", required: true
+      },
+      { step: 3, type: "textarea", id: "q_narrative",
+        label: "Is there anything else you would like DCF to know? (optional)",
+        brdRef: "MR-03", required: false, maxChars: 500,
+        placeholder: "Describe your experience..."
+      }
+    ]
+  },
+
+  /* ── Volunteer post-event pulse survey
+     BRD: VOL-01 through VOL-08
+     Trigger: within 48 hrs of event marked Completed
+     REACT prop name: VolunteerFormConfig */
+  vol: {
+    title: "Training & Event Feedback",
+    userGroup: "Volunteer",
+    triggerRef: "EVT-2026-0388",
+    brdRef: "VOL-01 - VOL-08",
+    color: "#C47C1A",
+    colorLight: "#FDF3E0",
+    prefill: { "Event": "Community support training", "Location": "Worcester North", "Date completed": "Apr 1, 2026" },
+    steps: ["Training content", "Facilitation", "Resources", "Overall"],
+    questions: [
+      /* Step 0 */
+      { step: 0, type: "likert", id: "q_content_quality",
+        label: "How would you rate the overall quality of the training content?",
+        brdRef: "VOL-03", required: true
+      },
+      { step: 0, type: "likert", id: "q_content_relevance",
+        label: "How relevant was the content to your volunteer role?",
+        brdRef: "VOL-03", required: true
+      },
+      /* Step 1 */
+      { step: 1, type: "likert", id: "q_facilitator",
+        label: "How effective was the facilitator in delivering the material?",
+        brdRef: "VOL-03", required: true
+      },
+      { step: 1, type: "likert", id: "q_facilitation_qa",
+        label: "How well did the facilitator handle questions and group discussion?",
+        brdRef: "VOL-03", required: true
+      },
+      /* Step 2 */
+      { step: 2, type: "likert", id: "q_resources",
+        label: "How adequate were the resources and materials provided?",
+        brdRef: "VOL-03", required: true
+      },
+      { step: 2, type: "checkbox", id: "q_gaps",
+        label: "Which resource gaps are most pressing in your area? (select all that apply)",
+        brdRef: "VOL-04, VOL-07", required: false,
+        options: ["Mental health services", "Transportation support", "Childcare assistance", "Legal aid", "Housing services", "Food / financial assistance", "Language / interpretation services"]
+      },
+      /* Step 3 */
+      { step: 3, type: "yesno", id: "q_recommend",
+        label: "Would you recommend this training programme to other volunteers?",
+        brdRef: "VOL-06", required: true
+      },
+      { step: 3, type: "likert", id: "q_overall_vol",
+        label: "Overall, how satisfied are you with your DCF volunteer experience?",
+        brdRef: "VOL-03", required: true
+      },
+      { step: 3, type: "textarea", id: "q_narrative_vol",
+        label: "What specific improvements would most benefit your community?",
+        brdRef: "VOL-07", required: false, maxChars: 500,
+        placeholder: "Share your observations..."
+      }
+    ]
+  },
+
+  /* ── Attorney legal milestone form
+     BRD: ATT-01 through ATT-09
+     Trigger: on document due-date milestone recorded in iFamilyNet
+     Note: includes privilege tagging + attestation (ATT-04, ATT-08)
+     REACT prop name: AttorneyFormConfig */
+  att: {
+    title: "Legal Milestone Feedback Form",
+    userGroup: "Attorney",
+    triggerRef: "MA-2026-1182",
+    brdRef: "ATT-01 - ATT-09",
+    color: "#B83232",
+    colorLight: "#FCEAEA",
+    privilegeTagged: true,
+    requiresAttestation: true,
+    prefill: { "Case ID": "MA-2026-0847", "Milestone": "Service plan review", "Attorney of record": "P. Nair" },
+    steps: ["Case details", "Document quality", "Communication", "Attestation"],
+    questions: [
+      /* Step 0 */
+      { step: 0, type: "dropdown", id: "q_milestone_type",
+        label: "Select the case milestone this form relates to:",
+        brdRef: "ATT-01", required: true,
+        options: ["Service plan review", "Document production", "Court hearing preparation", "ICWA / ICPC matter", "Emergency placement", "Case closure"]
+      },
+      { step: 0, type: "yesno", id: "q_icwa",
+        label: "Were there any ICWA or ICPC compliance concerns in this matter?",
+        brdRef: "ATT-09", required: true
+      },
+      /* Step 1 */
+      { step: 1, type: "likert", id: "q_doc_timeliness",
+        label: "How timely was document production for this milestone?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 1, type: "likert", id: "q_doc_completeness",
+        label: "How complete and accurate were the case records provided?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 1, type: "checkbox", id: "q_late_docs",
+        label: "Which document types were late or incomplete? (select all that apply)",
+        brdRef: "ATT-05", required: false,
+        options: ["Service plan", "Case history", "Court documents", "ICWA affidavit", "Placement records", "Assessment reports", "Medical records"]
+      },
+      /* Step 2 */
+      { step: 2, type: "likert", id: "q_caseworker_responsive",
+        label: "How responsive was the caseworker to your communications?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 2, type: "likert", id: "q_legal_team",
+        label: "How professional was DCF's legal team during this matter?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 2, type: "textarea", id: "q_narrative_att",
+        label: "Describe any specific concerns about this case milestone.",
+        brdRef: "ATT-02", required: false, maxChars: 500,
+        placeholder: "Document any concerns for the record..."
+      },
+      /* Step 3  -  Attestation (ATT-04) */
+      { step: 3, type: "attestation", id: "q_attestation",
+        label: "Digital attestation",
+        brdRef: "ATT-04", required: true
+      }
+    ]
+  },
+
+  /* ── Foster Parent placement milestone survey (Day 60)
+     BRD: FP-01 through FP-09
+     Trigger: day 30, 60, 90 and case closure milestones
+     Note: AI pre-fills area office, caseworker, placement details (BRD S.7)
+     REACT prop name: FosterParentFormConfig */
+  fp: {
+    title: "Placement Experience Survey  -  Day 60",
+    userGroup: "Foster Parent",
+    triggerRef: "PL-2839",
+    brdRef: "FP-01 - FP-09",
+    color: "#1B4F8A",
+    colorLight: "#E3EDF8",
+    prefill: { "Placement ID": "PL-2839", "Area office": "Boston North", "Caseworker": "J. Torres", "Placement day": "Day 60" },
+    steps: ["Caseworker quality", "Support services", "Child wellbeing", "Overall"],
+    questions: [
+      /* Step 0 */
+      { step: 0, type: "likert", id: "q_visit_freq",
+        label: "How satisfied are you with the frequency of caseworker visits?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 0, type: "likert", id: "q_visit_quality",
+        label: "How well does your caseworker understand the needs of the child in your care?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 0, type: "likert", id: "q_responsiveness",
+        label: "How responsive has the area office been to your questions and concerns?",
+        brdRef: "FP-02", required: true
+      },
+      /* Step 1 */
+      { step: 1, type: "likert", id: "q_complex_needs",
+        label: "How adequate is the support for the child's complex needs (if applicable)?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 1, type: "likert", id: "q_stipend",
+        label: "How satisfied are you with the timeliness of stipend payments?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 1, type: "checkbox", id: "q_support_gaps",
+        label: "Which areas do you need more support with? (select all that apply)",
+        brdRef: "FP-02", required: false,
+        options: ["Respite care", "Mental health referrals", "Education support", "Medical coordination", "Legal guidance", "Financial / stipend support", "Cultural or language services"]
+      },
+      /* Step 2 */
+      { step: 2, type: "yesno", id: "q_wellbeing",
+        label: "Do you feel the child's wellbeing needs are being adequately met?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 2, type: "likert", id: "q_supported",
+        label: "How well supported do you feel by DCF in your foster care role?",
+        brdRef: "FP-02", required: true
+      },
+      /* Step 3 */
+      { step: 3, type: "likert", id: "q_overall_fp",
+        label: "Overall, how satisfied are you with your experience as a foster parent with DCF?",
+        brdRef: "FP-02", required: true
+      },
+      { step: 3, type: "textarea", id: "q_narrative_fp",
+        label: "Please share any other observations about this placement.",
+        brdRef: "FP-07", required: false, maxChars: 1000,
+        placeholder: "Your observations help DCF improve placement support..."
+      }
+    ]
+  },
+
+  /* ── Case closure survey  -  Foster Parent
+     BRD: FP-07, FP-08
+     REACT prop name: ClosureFPFormConfig */
+  closure: {
+    title: "Case Closure Survey  -  Foster Parent",
+    userGroup: "Foster Parent",
+    triggerRef: "PL-2839",
+    brdRef: "FP-07, FP-08",
+    color: "#1B7B6A",
+    colorLight: "#E4F2EF",
+    prefill: { "Placement ID": "PL-2839", "Area office": "Boston North", "Caseworker": "J. Torres" },
+    steps: ["Experience summary", "Outcome & narrative"],
+    questions: [
+      { step: 0, type: "likert", id: "q_closure_overall",
+        label: "Overall, how would you rate your experience throughout this placement?",
+        brdRef: "FP-07", required: true
+      },
+      { step: 0, type: "likert", id: "q_closure_outcome",
+        label: "How satisfied are you with the outcome of this case?",
+        brdRef: "FP-07", required: true
+      },
+      { step: 0, type: "yesno", id: "q_would_foster_again",
+        label: "Based on your experience, would you be willing to foster again with DCF?",
+        brdRef: "FP-09", required: true
+      },
+      { step: 1, type: "textarea", id: "q_closure_narrative",
+        label: "Please share your overall reflections on this placement (up to 1,000 characters).",
+        brdRef: "FP-07", required: false, maxChars: 1000,
+        placeholder: "Your reflections help DCF improve outcomes for children and families..."
+      }
+    ]
+  },
+
+  /* ── Case closure form  -  Attorney
+     BRD: ATT-01, ATT-06
+     REACT prop name: ClosureAttFormConfig */
+  "closure-att": {
+    title: "Case Closure Form  -  Attorney",
+    userGroup: "Attorney",
+    triggerRef: "MA-2026-0847",
+    brdRef: "ATT-01, ATT-06",
+    color: "#B83232",
+    colorLight: "#FCEAEA",
+    privilegeTagged: true,
+    requiresAttestation: true,
+    prefill: { "Case ID": "MA-2026-0847", "Attorney": "P. Nair" },
+    steps: ["Process review", "Attestation"],
+    questions: [
+      { step: 0, type: "likert", id: "q_process_adherence",
+        label: "How would you rate DCF's adherence to legal process requirements throughout this case?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 0, type: "likert", id: "q_closure_outcome_att",
+        label: "How satisfied are you with the outcome of this case for your client?",
+        brdRef: "ATT-02", required: true
+      },
+      { step: 0, type: "textarea", id: "q_closure_narrative_att",
+        label: "Please provide any final observations for the case record.",
+        brdRef: "ATT-02", required: false, maxChars: 500,
+        placeholder: "Final observations for the legal record..."
+      },
+      { step: 1, type: "attestation", id: "q_closure_attestation",
+        label: "Digital attestation",
+        brdRef: "ATT-04", required: true
+      }
+    ]
+  }
+
+};
+
+
+// ── OVERLAY STATE ─────────────────────────────────────────────────
+// REACT: convert to useState hooks inside <FeedbackFormOverlay />
+var overlayState = {
+  isOpen:        false,
+  formKey:       null,
+  currentStep:   0,
+  answers:       {},     // { questionId: value }
+  checkboxes:    {},     // { questionId: [selectedOptions] }
+  narrativeText: "",
+  isProcessing:  false,
+  processingStep: 0,
+  isSuccess:     false,
+};
+
+// ── OPEN / CLOSE ──────────────────────────────────────────────────
+// REACT: onOpen / onClose callbacks passed as props
+
+function openForm(formKey) {
+  overlayState = {
+    isOpen: true, formKey: formKey,
+    currentStep: 0, answers: {}, checkboxes: {},
+    narrativeText: "", isProcessing: false, processingStep: 0, isSuccess: false
+  };
+  document.getElementById('overlay-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderOverlay();
+}
+
+function closeOverlay() {
+  document.getElementById('overlay-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleBackdropClick(e) {
+  if (e.target === document.getElementById('overlay-backdrop')) closeOverlay();
+}
+
+// ── RENDER OVERLAY ─────────────────────────────────────────────────
+// REACT: this entire function becomes the render body of <FeedbackFormOverlay />
+
+function renderOverlay() {
+  var cfg = FORM_CONFIGS[overlayState.formKey];
+  if (!cfg) return;
+
+  renderHeader(cfg);
+
+  if (overlayState.isProcessing) {
+    renderProcessing(cfg);
+  } else if (overlayState.isSuccess) {
+    renderSuccess(cfg);
+  } else {
+    renderStep(cfg);
+    renderFooter(cfg);
+  }
+}
+
+// ── RENDER HEADER ─────────────────────────────────────────────────
+// REACT: <FormHeader title userGroup triggerRef brdRef color onClose />
+
+function renderHeader(cfg) {
+  var h = document.getElementById('overlay-header');
+  h.innerHTML =
+    '<div class="overlay-header-top">' +
+      '<div class="overlay-title">' + cfg.title + '</div>' +
+      '<button class="overlay-close" onclick="closeOverlay()">&#10005;</button>' +
+    '</div>' +
+    '<div class="overlay-meta">' +
+      badge(cfg.userGroup, cfg.color) +
+      '<span class="mono" style="font-size:10px">Ref: ' + cfg.triggerRef + '</span>' +
+      '<span class="mono" style="font-size:10px;color:var(--text-muted)">BRD: ' + cfg.brdRef + '</span>' +
+      (cfg.privilegeTagged ? '<span class="badge badge-red">&#9878; Privilege tagged</span>' : '') +
+    '</div>';
+}
+
+function badge(text, color) {
+  return '<span style="font-size:9px;font-weight:600;padding:3px 8px;border-radius:100px;background:' +
+    color + '22;color:' + color + ';font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em">' +
+    text + '</span>';
+}
+
+// ── RENDER STEP ────────────────────────────────────────────────────
+// REACT: <FormStep config={cfg} stepIndex={currentStep} answers={answers} onChange={handleChange} />
+
+function renderStep(cfg) {
+  var step = overlayState.currentStep;
+  var stepQs = cfg.questions.filter(function(q) { return q.step === step; });
+  var body = document.getElementById('overlay-body');
+
+  var html = '';
+
+  /* Step progress indicator
+     REACT: <StepProgress steps={cfg.steps} currentStep={step} /> */
+  if (cfg.steps.length > 1) {
+    html += '<div class="step-progress">';
+    cfg.steps.forEach(function(name, i) {
+      var cls = i < step ? 'done' : i === step ? 'active' : '';
+      if (i > 0) html += '<div class="s-line' + (i <= step ? ' done' : '') + '"></div>';
+      html += '<div class="step-item ' + cls + '">' +
+        '<div class="step-circle">' + (i < step ? '&#10003;' : (i + 1)) + '</div>' +
+        '<div class="step-label">' + name + '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  /* AI disclosure banner  -  shown on first step only
+     REACT: <AiDisclosureBanner shown={step === 0} /> */
+  if (step === 0) {
+    html += '<div class="ai-disclosure">' +
+      '<div class="ai-disclosure-icon">&#9889;</div>' +
+      '<div><strong>AI processing disclosure:</strong> Your feedback will be automatically classified ' +
+      'by AI tools to help DCF identify service quality patterns. You may opt out  -  your response ' +
+      'will still be recorded manually.</div>' +
+      '</div>';
+  }
+
+  /* Privilege tag notice  -  attorney forms only
+     REACT: shown when cfg.privilegeTagged === true
+     REACT: <PrivilegeTagNotice /> */
+  if (cfg.privilegeTagged && step === 0) {
+    html += '<div class="privilege-notice">' +
+      '<span>&#9878;</span>' +
+      '<div>All submissions from attorneys are automatically privilege-tagged before entering any ' +
+      'shared analytics pipeline. ICWA/ICPC concerns are routed directly to DCF Legal and Policy. ' +
+      '<strong>BRD: ATT-08, ATT-09</strong></div>' +
+      '</div>';
+  }
+
+  /* AI pre-fill banner  -  shown on first step if prefill data exists
+     REACT: <AiPrefillBanner fields={cfg.prefill} shown={step === 0} /> */
+  if (step === 0 && cfg.prefill && Object.keys(cfg.prefill).length > 0) {
+    var prefillItems = Object.entries(cfg.prefill)
+      .map(function(e) { return '<strong>' + e[0] + '</strong>: ' + e[1]; })
+      .join('  &middot;  ');
+    html += '<div class="prefill-banner">' +
+      '<div>&#9889;</div>' +
+      '<div><strong>AI pre-filled from iFamilyNet record:</strong> ' + prefillItems + '</div>' +
+      '</div>';
+  }
+
+  /* Render questions for this step
+     REACT: stepQs.map(q => <QuestionField key={q.id} question={q} value={answers[q.id]} onChange={...} />) */
+  stepQs.forEach(function(q) {
+    html += renderQuestion(q);
+  });
+
+  body.innerHTML = html;
+}
+
+// ── RENDER QUESTION ────────────────────────────────────────────────
+// REACT: <QuestionField question={q} value={answers[q.id]} onChange={handleChange} />
+// Each case below becomes a separate field component:
+//   <LikertField />, <DropdownField />, <CheckboxGroupField />,
+//   <YesNoField />, <TextareaField />, <AttestationField />
+
+function renderQuestion(q) {
+  var ans = overlayState.answers[q.id];
+  var cbs = overlayState.checkboxes[q.id] || [];
+  var emojis = ["&#128542;","&#128577;","&#128528;","&#128578;","&#128522;"];
+  // &apos; wraps q.id so onclick="setAnswer(&apos;q_role&apos;,1)" is valid HTML
+  var qid = "&apos;" + q.id + "&apos;";
+
+  var html = '<div class="form-group" id="fg-' + q.id + '">'
+    + '<label class="form-label">' + escHtml(q.label)
+    + (q.required ? '<span class="req">*</span>' : '')
+    + '<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);font-weight:400;margin-left:8px">'
+    + escHtml(q.brdRef) + '</span>'
+    + '</label>';
+
+  switch (q.type) {
+
+    case 'likert':
+      var labels = ['Very bad','Bad','Neutral','Good','Excellent'];
+      html += '<div class="likert">';
+      [1,2,3,4,5].forEach(function(v, i) {
+        var sel = ans === v;
+        html += '<div class="likert-option' + (sel ? ' selected' : '') + '"'
+          + ' onclick="setAnswer(' + qid + ',' + v + ')">'
+          + '<span class="likert-emoji">' + emojis[i] + '</span>'
+          + '<span class="likert-num">' + v + '</span>'
+          + '<span class="likert-text">' + labels[i] + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+      break;
+
+    case 'dropdown':
+      html += '<select class="form-select" onchange="setAnswer(' + qid + ',this.value)">'
+        + '<option value="">Select...</option>';
+      (q.options || []).forEach(function(o) {
+        html += '<option' + (ans === o ? ' selected' : '') + '>' + escHtml(o) + '</option>';
+      });
+      html += '</select>';
+      break;
+
+    case 'checkbox':
+      html += '<div class="checkbox-group">';
+      (q.options || []).forEach(function(o) {
+        var checked = cbs.indexOf(o) > -1;
+        // Use data-opt attribute to avoid quoting the option value in onclick
+        var oidx = (q.options || []).indexOf(o);
+        html += '<div class="checkbox-option' + (checked ? ' selected' : '') + '"'
+          + ' data-qid="' + escHtml(q.id) + '" data-oidx="' + oidx + '"'
+          + ' onclick="cbClick(this)">'
+          + '<div class="checkbox-box">' + (checked ? '&#10003;' : '') + '</div>'
+          + '<span>' + escHtml(o) + '</span>'
+          + '</div>';
+      });
+      html += '</div>';
+      break;
+
+    case 'yesno':
+      html += '<div class="yesno">'
+        + '<button class="yesno-btn yes' + (ans === 'Yes' ? ' selected' : '') + '"'
+        + ' onclick="setAnswer(' + qid + ',&apos;Yes&apos;)">&#10003; Yes</button>'
+        + '<button class="yesno-btn no' + (ans === 'No' ? ' selected' : '') + '"'
+        + ' onclick="setAnswer(' + qid + ',&apos;No&apos;)">&#10005; No</button>'
+        + '</div>';
+      break;
+
+    case 'textarea':
+      var charCount = overlayState.narrativeText.length;
+      html += '<textarea class="form-textarea"'
+        + ' maxlength="' + (q.maxChars || 500) + '"'
+        + ' placeholder="' + escHtml(q.placeholder || 'Your response...') + '"'
+        + ' oninput="handleNarrativeInput(this.value,' + qid + ')">'
+        + escHtml(overlayState.narrativeText)
+        + '</textarea>'
+        + '<div class="form-char-count">' + charCount + ' / ' + (q.maxChars || 500) + '</div>';
+
+      var txt = overlayState.narrativeText.toLowerCase();
+      var aiVisible = overlayState.narrativeText.length > 20;
+      var aiCat = /safe|harm|danger/.test(txt) ? 'Child safety concern'
+                : /stipend|payment/.test(txt)  ? 'Financial support'
+                : /document|overdue|late/.test(txt) ? 'Document timeliness'
+                : 'Service quality';
+      var aiUrg = /safe|harm|never|emergency/.test(txt) ? 'High' : 'Normal';
+      html += '<div class="ai-assist' + (aiVisible ? ' visible' : '') + '">'
+        + '<div>&#9889;</div>'
+        + '<div><div class="ai-assist-label">AI classifying as you type</div>'
+        + 'Detected topic: <strong>' + escHtml(aiCat) + '</strong>'
+        + ' &middot; Urgency signal: <strong style="color:' + (aiUrg === 'High' ? 'var(--red)' : 'inherit') + '">' + aiUrg + '</strong>'
+        + '</div></div>';
+      break;
+
+    case 'attestation':
+      html += '<div class="attestation">'
+        + '<div class="attestation-text">'
+        + 'I, the undersigned attorney, attest that the feedback provided is true and accurate '
+        + 'to the best of my knowledge, and that I am the attorney of record for case '
+        + escHtml(FORM_CONFIGS[overlayState.formKey].prefill['Case ID'] || 'the referenced case')
+        + '. I understand this submission will be privilege-tagged before entering DCF analytics systems.'
+        + '</div>'
+        + '<div class="attestation-sig">'
+        + '<input class="attestation-input" placeholder="Sign here..."'
+        + ' oninput="setAnswer(' + qid + ',this.value)"'
+        + ' value="' + escHtml(ans || '') + '"/>'
+        + '<span style="font-size:11px;color:var(--text-muted)">Type full name</span>'
+        + '</div>'
+        + '</div>';
+      break;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// cbClick: reads data attributes to avoid quoting option values in onclick
+function cbClick(el) {
+  var qid  = el.getAttribute('data-qid');
+  var oidx = parseInt(el.getAttribute('data-oidx'), 10);
+  var cfg  = FORM_CONFIGS[overlayState.formKey];
+  var q    = cfg.questions.find(function(x) { return x.id === qid; });
+  if (!q) return;
+  var opt = (q.options || [])[oidx];
+  if (opt !== undefined) toggleCheckbox(qid, opt);
+}
+
+
+function renderFooter(cfg) {
+  var step = overlayState.currentStep;
+  var isLast = step >= cfg.steps.length - 1;
+  var f = document.getElementById('overlay-footer');
+
+  f.innerHTML =
+    '<div class="footer-left">' +
+      (step > 0 ? '<button class="btn btn-ghost" onclick="prevStep()">&larr; Back</button>' : '') +
+      '<button class="btn btn-ghost" onclick="skipStep()">Skip step</button>' +
+    '</div>' +
+    '<div class="footer-right">' +
+      (isLast
+        ? '<button class="btn btn-submit" onclick="submitForm()">Submit feedback &rarr;</button>'
+        : '<button class="btn btn-primary" onclick="nextStep()">Next: ' + cfg.steps[Math.min(step + 1, cfg.steps.length - 1)] + ' &rarr;</button>'
+      ) +
+    '</div>';
+}
+
+// ── RENDER PROCESSING ──────────────────────────────────────────────
+// REACT: <ProcessingState currentStep={processingStep} />
+
+function renderProcessing(cfg) {
+  var p = overlayState.processingStep;
+  var steps = [
+    "PII detection and redaction",
+    "Topic classification (GPT-4)",
+    "Urgency and sentiment scoring",
+    "Named entity recognition",
+    "Routing and queue assignment"
+  ];
+
+  var html = '<div class="processing-state">' +
+    '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:4px">AI pipeline running</div>' +
+    '<div style="font-family:var(--font-display);font-size:20px;font-style:italic;margin-bottom:16px">Processing your submission...</div>' +
+    '<div class="processing-steps">';
+
+  steps.forEach(function(s, i) {
+    var done = p > i, active = p === i;
+    html += '<div class="proc-step' + (done ? ' done' : active ? ' active' : '') + '">' +
+      '<div class="proc-dot' + (done ? ' done' : active ? ' active' : '') + '">' +
+      (done ? '&#10003;' : active ? '<div class="spinner"></div>' : (i + 1)) +
+      '</div>' + s + '</div>';
+  });
+
+  html += '</div></div>';
+  document.getElementById('overlay-body').innerHTML = html;
+  document.getElementById('overlay-footer').innerHTML = '';
+}
+
+// ── RENDER SUCCESS ─────────────────────────────────────────────────
+// REACT: <SuccessState result={result} onDone={closeOverlay} />
+
+function renderSuccess(cfg) {
+  var txt = overlayState.narrativeText.toLowerCase();
+  var cat = /safe|harm/.test(txt) ? 'Child safety concern' :
+            /stipend|payment/.test(txt) ? 'Financial support' :
+            /document|overdue/.test(txt) ? 'Document timeliness' : 'Service quality';
+  var urg = /safe|harm|never/.test(txt) ? 'High' : 'Normal';
+  var vals = Object.values(overlayState.answers).filter(function(v) { return typeof v === 'number'; });
+  var avg = vals.length ? (vals.reduce(function(a, b) { return a + b; }, 0) / vals.length).toFixed(1) : '3.4';
+
+  document.getElementById('overlay-body').innerHTML =
+    '<div class="success-state">' +
+    '<div class="success-icon">&#10003;</div>' +
+    '<div class="success-title">Feedback received</div>' +
+    '<div class="success-sub">Your submission has been processed by the AI pipeline. ' +
+    'A personalised response will be sent within 24 hours.</div>' +
+    '<div class="result-grid">' +
+      '<div class="result-cell"><div class="result-label">Detected topic</div><div class="result-value">' + cat + '</div></div>' +
+      '<div class="result-cell"><div class="result-label">Avg sentiment</div><div class="result-value" style="color:' + (parseFloat(avg) < 2.5 ? 'var(--red)' : parseFloat(avg) < 3.5 ? 'var(--amber)' : 'var(--teal)') + '">' + avg + ' / 5</div></div>' +
+      '<div class="result-cell"><div class="result-label">Urgency signal</div><div class="result-value" style="color:' + (urg === 'High' ? 'var(--red)' : 'var(--teal)') + '">' + urg + '</div></div>' +
+      '<div class="result-cell"><div class="result-label">Routing</div><div class="result-value">' + (urg === 'High' ? 'Supervisor queue' : 'Closed-loop AI') + '</div></div>' +
+    '</div>' +
+    '<button class="btn btn-primary" onclick="closeOverlay()" style="margin-top:8px">Done</button>' +
+    '</div>';
+
+  document.getElementById('overlay-footer').innerHTML = '';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────
+// REACT: handled via useState(currentStep) + event handlers
+
+function nextStep() {
+  var cfg = FORM_CONFIGS[overlayState.formKey];
+  overlayState.currentStep = Math.min(overlayState.currentStep + 1, cfg.steps.length - 1);
+  overlayState.narrativeText = "";
+  renderOverlay();
+  document.getElementById('overlay-body').scrollTop = 0;
+}
+
+function prevStep() {
+  overlayState.currentStep = Math.max(overlayState.currentStep - 1, 0);
+  overlayState.narrativeText = "";
+  renderOverlay();
+  document.getElementById('overlay-body').scrollTop = 0;
+}
+
+function skipStep() { nextStep(); }
+
+// ── SUBMIT ────────────────────────────────────────────────────────
+// REACT: async submitForm() with loading state management
+
+function submitForm() {
+  overlayState.isProcessing = true;
+  overlayState.processingStep = 0;
+  renderOverlay();
+
+  var steps = [0, 1, 2, 3, 4];
+  steps.forEach(function(s, i) {
+    setTimeout(function() {
+      overlayState.processingStep = s + 1;
+      if (overlayState.isProcessing) renderOverlay();
+    }, 700 * (i + 1));
+  });
+
+  setTimeout(function() {
+    overlayState.isProcessing = false;
+    overlayState.isSuccess = true;
+    renderOverlay();
+  }, 700 * (steps.length + 1));
+}
+
+// ── ANSWER HANDLERS ───────────────────────────────────────────────
+// REACT: these become the onChange handlers passed to each field component
+
+function setAnswer(id, val) {
+  overlayState.answers[id] = typeof val === 'number' ? val : val;
+  renderOverlay();
+  // preserve scroll position
+  var body = document.getElementById('overlay-body');
+  if (body) body.scrollTop = 0;
+}
+
+function toggleCheckbox(id, opt) {
+  if (!overlayState.checkboxes[id]) overlayState.checkboxes[id] = [];
+  var idx = overlayState.checkboxes[id].indexOf(opt);
+  if (idx > -1) overlayState.checkboxes[id].splice(idx, 1);
+  else overlayState.checkboxes[id].push(opt);
+  renderOverlay();
+}
+
+function handleNarrativeInput(val, id) {
+  overlayState.narrativeText = val;
+  overlayState.answers[id] = val;
+  // only re-render the AI assist box and char count to avoid cursor jump
+  var cfg = FORM_CONFIGS[overlayState.formKey];
+  var step = overlayState.currentStep;
+  var stepQs = cfg.questions.filter(function(q) { return q.step === step; });
+  var q = stepQs.find(function(q2) { return q2.id === id; });
+  if (!q) return;
+
+  var txt = val.toLowerCase();
+  var aiCat = /safe|harm|danger/.test(txt) ? 'Child safety concern' :
+              /stipend|payment/.test(txt)    ? 'Financial support' :
+              /document|overdue|late/.test(txt) ? 'Document timeliness' : 'Service quality';
+  var aiUrg = /safe|harm|never|emergency/.test(txt) ? 'High' : 'Normal';
+  var aiVisible = val.length > 20;
+
+  // update char count
+  var cc = document.querySelector('.form-char-count');
+  if (cc) cc.textContent = val.length + ' / ' + (q.maxChars || 500);
+
+  // update AI assist
+  var aa = document.querySelector('.ai-assist');
+  if (aa) {
+    aa.className = 'ai-assist' + (aiVisible ? ' visible' : '');
+    aa.innerHTML = '<div>&#9889;</div><div><div class="ai-assist-label">AI classifying as you type</div>' +
+      'Detected topic: <strong>' + aiCat + '</strong>  &middot;  ' +
+      'Urgency signal: <strong style="color:' + (aiUrg === 'High' ? 'var(--red)' : 'inherit') + '">' + aiUrg + '</strong>' +
+      '</div>';
+  }
+}
+
+// ── KEYBOARD CLOSE ────────────────────────────────────────────────
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeOverlay();
+});
+
+// ── PIPELINE STAGE SCROLL & ACTIVE STATE ─────────────────────────
+// REACT: stageClick becomes an onClick prop on each <PipelineStage />
+// setActivePipelineStage becomes state lifted to <PipelineLegend />
+// The IntersectionObserver becomes a useActiveSection() custom hook
+
+// Each section maps to the pipeline stage element that represents it.
+// Stages 1 (hotline) and 2 (51A filing) both live inside section-intake;
+// stage 3 (investigation) lives in section-investigation.
+var STAGE_MAP = [
+  { section: 'section-intake',        stageId: 'ps-section-intake' },
+  { section: 'section-intake',        stageId: 'ps-section-investigation' },   // stage 2 = 51A = still intake section
+  { section: 'section-investigation', stageId: 'ps-section-investigation2' },
+  { section: 'section-placement',     stageId: 'ps-section-placement' },
+  { section: 'section-legal',         stageId: 'ps-section-legal' },
+  { section: 'section-closure',       stageId: 'ps-section-closure' },
+];
+
+// Unique sections for the observer
+var OBSERVED_SECTIONS = [
+  'section-intake',
+  'section-investigation',
+  'section-placement',
+  'section-legal',
+  'section-closure',
+  'section-timeline',
+];
+
+// Scroll to section and briefly highlight the stage
+function stageClick(sectionId) {
+  var target = document.getElementById(sectionId);
+  if (!target) return;
+
+  var topbarH = 52;
+  var pipelineH = document.getElementById('pipeline-legend').offsetHeight + 12;
+  var offset = topbarH + pipelineH;
+  var top = target.getBoundingClientRect().top + window.pageYOffset - offset;
+  window.scrollTo({ top: top, behavior: 'smooth' });
+}
+
+// Mark the pipeline stage(s) that correspond to a visible section
+function setActivePipelineStage(sectionId) {
+  // Collect the stage elements that map to this section
+  var matchingStages = STAGE_MAP
+    .filter(function(m) { return m.section === sectionId; })
+    .map(function(m) { return document.getElementById(m.stageId); })
+    .filter(Boolean);
+
+  if (matchingStages.length === 0) return;
+
+  // Remove 'highlight' from all stages; re-apply 'active' only to matching ones
+  document.querySelectorAll('.pipeline-stage').forEach(function(el) {
+    el.classList.remove('highlight');
+  });
+
+  matchingStages.forEach(function(el) {
+    el.classList.add('highlight');
+    setTimeout(function() {
+      el.classList.remove('highlight');
+    }, 800);
+  });
+}
+
+// IntersectionObserver  -  fires when a section enters the upper viewport
+var sectionObserver = new IntersectionObserver(function(entries) {
+  var best = null;
+  entries.forEach(function(entry) {
+    if (entry.isIntersecting) {
+      if (!best || entry.intersectionRatio > best.intersectionRatio) {
+        best = entry;
+      }
+    }
+  });
+  if (best) setActivePipelineStage(best.target.id);
+}, {
+  rootMargin: '-52px 0px -55% 0px',
+  threshold: [0, 0.1, 0.25, 0.5]
+});
+
+OBSERVED_SECTIONS.forEach(function(id) {
+  var el = document.getElementById(id);
+  if (el) sectionObserver.observe(el);
+});
+
+// ══════════════════════════════════════════════════════════════════
+// SCROLL TO TOP
+// ══════════════════════════════════════════════════════════════════
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('scroll', function() {
+  var btn = document.getElementById('scroll-top-btn');
+  if (window.pageYOffset > 320) { btn.classList.add('visible'); }
+  else { btn.classList.remove('visible'); }
+}, { passive: true });
+
+// ══════════════════════════════════════════════════════════════════
+// USER DROPDOWN MENU
+// ══════════════════════════════════════════════════════════════════
+function toggleUserMenu(e) {
+  e.stopPropagation();
+  document.getElementById('user-menu').classList.toggle('open');
+}
+function closeUserMenu() {
+  document.getElementById('user-menu').classList.remove('open');
+}
+document.addEventListener('click', function(e) {
+  var btn  = document.getElementById('user-btn');
+  var menu = document.getElementById('user-menu');
+  if (btn && menu && !btn.contains(e.target) && !menu.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════
+// ADMIN FORM CONFIGURATOR
+// ══════════════════════════════════════════════════════════════════
+var FORM_CONFIGS_BACKUP = JSON.parse(JSON.stringify(FORM_CONFIGS));
+var adminState = { isOpen: false, activeFormKey: 'mr', activeStep: 0, addingType: null };
+
+function openAdminPanel() {
+  closeUserMenu();
+  adminState.isOpen = true;
+  adminState.activeFormKey = 'mr';
+  adminState.activeStep = 0;
+  document.getElementById('admin-backdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderAdminPanel();
+}
+function closeAdminPanel() {
+  document.getElementById('admin-backdrop').classList.remove('open');
+  document.body.style.overflow = '';
+  adminState.isOpen = false;
+}
+function handleAdminBackdropClick(e) {
+  if (e.target === document.getElementById('admin-backdrop')) closeAdminPanel();
+}
+
+function renderAdminPanel() { renderAdminSidebar(); renderAdminEditor(); }
+
+function renderAdminSidebar() {
+  var META = {
+    'mr':          { label: 'Post-51A Survey',     sub: 'Mandated Reporter &middot; MR-01' },
+    'vol':         { label: 'Training Feedback',    sub: 'Volunteer &middot; VOL-01' },
+    'att':         { label: 'Legal Milestone Form', sub: 'Attorney &middot; ATT-01' },
+    'fp':          { label: 'Placement Survey D60', sub: 'Foster Parent &middot; FP-01' },
+    'closure':     { label: 'Case Closure Survey',  sub: 'Foster Parent &middot; FP-07' },
+    'closure-att': { label: 'Closure Form (Att.)',  sub: 'Attorney &middot; ATT-01' },
+  };
+  var html = '';
+  Object.keys(META).forEach(function(key) {
+    var mv = META[key];
+    var k = '&apos;' + key + '&apos;';
+    html += '<div class="admin-sidebar-item' + (adminState.activeFormKey === key ? ' active' : '') + '"'
+      + ' onclick="selectAdminForm(' + k + ')">'
+      + '<div>' + mv.label + '</div>'
+      + '<div class="admin-sidebar-label">' + mv.sub + '</div>'
+      + '</div>';
+  });
+  document.getElementById('admin-sidebar').innerHTML = html;
+}
+
+
+function selectAdminForm(key) {
+  adminState.activeFormKey = key;
+  adminState.activeStep = 0;
+  adminState.addingType = null;
+  renderAdminPanel();
+}
+
+function renderAdminEditor() {
+  var key = adminState.activeFormKey;
+  var cfg = FORM_CONFIGS[key];
+  var step = adminState.activeStep;
+  var stepQs = cfg.questions.filter(function(q) { return q.step === step; });
+  var TYPE_LABELS = {
+    likert:'Likert 1-5', dropdown:'Dropdown', checkbox:'Multi-select',
+    yesno:'Yes / No', textarea:'Free text', attestation:'Attestation'
+  };
+  // Helper: build onclick/oninput string with key safely quoted via &apos;
+  // &apos; survives HTML attribute parsing and becomes ' in the JS call
+  var k = '&apos;' + escHtml(key) + '&apos;';
+  var html = '';
+
+  // ---- SECTION 1: Form identity ----
+  html += '<div class="admin-section">'
+    + '<div class="admin-section-title">Form identity</div>'
+    + '<div class="form-group"><label class="form-label">Form title</label>'
+    + '<input class="form-input" value="' + escHtml(cfg.title) + '"'
+    + ' oninput="updateFormMeta(' + k + ',&apos;title&apos;,this.value)"/>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+
+    + '<div class="form-group"><label class="form-label">Trigger window</label>'
+    + '<select class="form-select" onchange="updateFormMeta(' + k + ',&apos;triggerWindow&apos;,this.value)">'
+    + ['Immediately on event','24 hours after event','48 hours after event',
+       '5-7 business days','On milestone date','Within 7 days of closure'].map(function(o) {
+         return '<option' + (cfg.triggerWindow === o ? ' selected' : '') + '>' + escHtml(o) + '</option>';
+       }).join('')
+    + '</select></div>'
+
+    + '<div class="form-group"><label class="form-label">Survey expiry</label>'
+    + '<select class="form-select" onchange="updateFormMeta(' + k + ',&apos;expiry&apos;,this.value)">'
+    + ['7 days','14 days','30 days','60 days'].map(function(o) {
+        return '<option' + (cfg.expiry === o ? ' selected' : '') + '>' + escHtml(o) + '</option>';
+      }).join('')
+    + '</select></div>'
+    + '</div>'
+
+    + '<div class="admin-toggle-row">'
+    + '<div class="admin-toggle' + (cfg.aiDisclosure !== false ? ' on' : '') + '"'
+    + ' onclick="toggleFormFlag(' + k + ',&apos;aiDisclosure&apos;)"></div>'
+    + '<span style="font-size:12px">Show AI processing disclosure on first step</span>'
+    + '</div>'
+
+    + '<div class="admin-toggle-row">'
+    + '<div class="admin-toggle' + (cfg.prefill && Object.keys(cfg.prefill).length > 0 ? ' on' : '') + '"'
+    + ' onclick="toggleFormFlag(' + k + ',&apos;aiPrefill&apos;)"></div>'
+    + '<span style="font-size:12px">AI pre-fill from iFamilyNet record</span>'
+    + '</div>'
+
+    + (cfg.privilegeTagged !== undefined
+        ? '<div class="admin-toggle-row">'
+          + '<div class="admin-toggle' + (cfg.privilegeTagged ? ' on' : '') + '"'
+          + ' onclick="toggleFormFlag(' + k + ',&apos;privilegeTagged&apos;)"></div>'
+          + '<span style="font-size:12px">Attorney privilege tagging (BRD: ATT-08)</span>'
+          + '</div>'
+        : '')
+    + '</div>';
+
+  // ---- SECTION 2: Steps ----
+  html += '<div class="admin-section">'
+    + '<div class="admin-section-title">Form steps (' + cfg.steps.length + ')</div>'
+    + '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">';
+
+  cfg.steps.forEach(function(name, i) {
+    html += '<div style="display:flex;align-items:center;gap:7px">'
+      + '<span style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);width:18px">' + (i + 1) + '</span>'
+      + '<input class="form-input" style="flex:1" value="' + escHtml(name) + '"'
+      + ' oninput="updateStep(' + k + ',' + i + ',this.value)"/>'
+      + '<button class="admin-q-btn del" onclick="removeStep(' + k + ',' + i + ')" title="Remove">&#10005;</button>'
+      + '</div>';
+  });
+
+  html += '</div>'
+    + '<button class="admin-add-btn" onclick="addStep(' + k + ')">+ Add step</button>'
+    + '</div>';
+
+  // ---- SECTION 3: Questions ----
+  html += '<div class="admin-section">'
+    + '<div class="admin-section-title">Questions</div>'
+    + '<div class="admin-step-tabs">';
+
+  cfg.steps.forEach(function(name, i) {
+    html += '<div class="admin-step-tab' + (step === i ? ' active' : '') + '"'
+      + ' onclick="selectAdminStep(' + i + ')">' + escHtml(name) + '</div>';
+  });
+  html += '</div>';
+
+  if (stepQs.length === 0) {
+    html += '<div style="font-size:11px;color:var(--text-muted);padding:12px 0">No questions on this step yet.</div>';
+  }
+
+  stepQs.forEach(function(q) {
+    var qIdx = cfg.questions.indexOf(q);
+    html += '<div class="admin-q-row">'
+      + '<div class="admin-q-handle">&#8942;</div>'
+      + '<div class="admin-q-body">'
+      + '<div class="admin-q-type">' + (TYPE_LABELS[q.type] || q.type)
+      + (q.required
+          ? ' &nbsp;&#183;&nbsp; <span style="color:var(--red)">Required</span>'
+          : ' &nbsp;&#183;&nbsp; <span style="color:var(--text-muted)">Optional</span>')
+      + ' &nbsp;&#183;&nbsp; <span style="color:var(--text-muted)">' + escHtml(q.brdRef) + '</span>'
+      + '</div>'
+      + '<input class="admin-q-label-input" value="' + escHtml(q.label) + '"'
+      + ' oninput="updateQuestionLabel(' + k + ',' + qIdx + ',this.value)"/>';
+
+    if (q.type === 'dropdown' || q.type === 'checkbox') {
+      html += '<div style="margin-top:5px">'
+        + '<input class="form-input" style="font-size:11px"'
+        + ' value="' + escHtml((q.options || []).join(', ')) + '"'
+        + ' oninput="updateQuestionOptions(' + k + ',' + qIdx + ',this.value)"'
+        + ' placeholder="Options, comma separated"/>'
+        + '</div>';
+    }
+
+    html += '</div>'
+      + '<div class="admin-q-actions">'
+      + '<button class="admin-q-btn" title="Toggle required"'
+      + ' onclick="toggleRequired(' + k + ',' + qIdx + ')">'
+      + (q.required ? '&#10035;' : '&#9675;')
+      + '</button>'
+      + '<button class="admin-q-btn" onclick="moveQuestion(' + k + ',' + qIdx + ',-1)">&#8679;</button>'
+      + '<button class="admin-q-btn" onclick="moveQuestion(' + k + ',' + qIdx + ',1)">&#8681;</button>'
+      + '<button class="admin-q-btn del" onclick="removeQuestion(' + k + ',' + qIdx + ')">&#10005;</button>'
+      + '</div>'
+      + '</div>';
+  });
+
+  html += '<button class="admin-add-btn" onclick="showTypePicker(' + k + ',' + step + ')">+ Add question to this step</button>';
+
+  if (adminState.addingType === step) {
+    html += '<div class="type-pills">'
+      + '<div style="font-family:var(--font-mono);font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);width:100%;margin-bottom:4px">Select field type</div>'
+      + ['likert','dropdown','checkbox','yesno','textarea','attestation'].map(function(t) {
+          var tq = '&apos;' + t + '&apos;';
+          return '<div class="type-pill" onclick="addQuestion(' + k + ',' + step + ',' + tq + ')">' + (TYPE_LABELS[t] || t) + '</div>';
+        }).join('')
+      + '</div>';
+  }
+
+  html += '</div>';
+  document.getElementById('admin-editor').innerHTML = html;
+}
+
+function escHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function selectAdminStep(i) { adminState.activeStep = i; adminState.addingType = null; renderAdminEditor(); }
+function updateFormMeta(key,field,val) { FORM_CONFIGS[key][field] = val; }
+function toggleFormFlag(key, flag) {
+  if (flag === 'aiDisclosure') { FORM_CONFIGS[key].aiDisclosure = FORM_CONFIGS[key].aiDisclosure === false ? true : false; }
+  else if (flag === 'aiPrefill') { FORM_CONFIGS[key].prefill = (FORM_CONFIGS[key].prefill && Object.keys(FORM_CONFIGS[key].prefill).length) ? {} : (FORM_CONFIGS_BACKUP[key].prefill || {}); }
+  else if (flag === 'privilegeTagged') { FORM_CONFIGS[key].privilegeTagged = !FORM_CONFIGS[key].privilegeTagged; }
+  renderAdminEditor();
+}
+function updateStep(key,i,val) { FORM_CONFIGS[key].steps[i] = val; }
+function addStep(key) { FORM_CONFIGS[key].steps.push('New step'); adminState.activeStep = FORM_CONFIGS[key].steps.length-1; renderAdminEditor(); }
+function removeStep(key,i) {
+  var cfg = FORM_CONFIGS[key];
+  if (cfg.steps.length <= 1) return;
+  cfg.questions.forEach(function(q) { if (q.step === i) q.step = 0; else if (q.step > i) q.step--; });
+  cfg.steps.splice(i, 1);
+  adminState.activeStep = Math.max(0, adminState.activeStep - (i <= adminState.activeStep ? 1 : 0));
+  renderAdminEditor();
+}
+function updateQuestionLabel(key,idx,val) { FORM_CONFIGS[key].questions[idx].label = val; }
+function updateQuestionOptions(key,idx,val) { FORM_CONFIGS[key].questions[idx].options = val.split(',').map(function(s){return s.trim();}).filter(Boolean); }
+function toggleRequired(key,idx) { FORM_CONFIGS[key].questions[idx].required = !FORM_CONFIGS[key].questions[idx].required; renderAdminEditor(); }
+function moveQuestion(key,idx,dir) {
+  var qs = FORM_CONFIGS[key].questions;
+  var ni = idx + dir;
+  if (ni < 0 || ni >= qs.length) return;
+  var tmp = qs[idx]; qs[idx] = qs[ni]; qs[ni] = tmp; renderAdminEditor();
+}
+function removeQuestion(key,idx) { FORM_CONFIGS[key].questions.splice(idx,1); renderAdminEditor(); }
+function showTypePicker(key,step) { adminState.addingType = adminState.addingType === step ? null : step; renderAdminEditor(); }
+function addQuestion(key,step,type) {
+  var defs = {
+    likert:   {label:'Rate this aspect of your experience.',required:true},
+    dropdown: {label:'Select an option:',required:true,options:['Option A','Option B','Option C']},
+    checkbox: {label:'Select all that apply:',required:false,options:['Option A','Option B','Option C']},
+    yesno:    {label:'Does this apply to your experience?',required:true},
+    textarea: {label:'Please provide any additional comments.',required:false,maxChars:500,placeholder:'Your response...'},
+    attestation:{label:'Digital attestation',required:true}
+  };
+  var d = defs[type]||{label:'New question',required:false};
+  FORM_CONFIGS[key].questions.push(Object.assign({step:step,type:type,id:'q_custom_'+Date.now(),brdRef:'Custom'},d));
+  adminState.addingType = null;
+  renderAdminEditor();
+}
+function resetFormConfig() {
+  FORM_CONFIGS[adminState.activeFormKey] = JSON.parse(JSON.stringify(FORM_CONFIGS_BACKUP[adminState.activeFormKey]));
+  adminState.activeStep = 0;
+  renderAdminPanel();
+  showToast('Form reset to defaults.');
+}
+function saveFormConfig() { closeAdminPanel(); showToast('Form configuration saved.'); }
+function showToast(msg) {
+  var t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2400);
+}
+
+// Escape key  -  close whichever panel is open
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (adminState.isOpen) closeAdminPanel();
+    else closeOverlay();
+  }
+});
+
+
+// Explicitly expose all onclick handlers to window scope
+// (required for sandboxed iframe environments)
+window.toggleUserMenu    = toggleUserMenu;
+window.closeUserMenu     = closeUserMenu;
+window.openAdminPanel    = openAdminPanel;
+window.closeAdminPanel   = closeAdminPanel;
+window.handleAdminBackdropClick = handleAdminBackdropClick;
+window.openForm          = openForm;
+window.closeOverlay      = closeOverlay;
+window.handleBackdropClick = handleBackdropClick;
+window.stageClick        = stageClick;
+window.scrollToTop       = scrollToTop;
+window.nextStep          = nextStep;
+window.prevStep          = prevStep;
+window.skipStep          = skipStep;
+window.submitForm        = submitForm;
+window.setAnswer         = setAnswer;
+window.toggleCheckbox    = toggleCheckbox;
+window.handleNarrativeInput = handleNarrativeInput;
+window.selectAdminForm   = selectAdminForm;
+window.selectAdminStep   = selectAdminStep;
+window.updateFormMeta    = updateFormMeta;
+window.toggleFormFlag    = toggleFormFlag;
+window.updateStep        = updateStep;
+window.addStep           = addStep;
+window.removeStep        = removeStep;
+window.updateQuestionLabel  = updateQuestionLabel;
+window.updateQuestionOptions = updateQuestionOptions;
+window.toggleRequired    = toggleRequired;
+window.moveQuestion      = moveQuestion;
+window.removeQuestion    = removeQuestion;
+window.showTypePicker    = showTypePicker;
+window.addQuestion       = addQuestion;
+window.resetFormConfig   = resetFormConfig;
+window.saveFormConfig    = saveFormConfig;
+
+</script>
+
+<!-- Save toast -->
+<div class="save-toast" id="save-toast"></div>
+
+</body>
+</html>

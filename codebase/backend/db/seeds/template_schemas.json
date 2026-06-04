@@ -1,0 +1,195 @@
+{
+  "tpl_mr_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "reporter_category",
+        "type": "dropdown",
+        "label": "Reporter category",
+        "description": "Select the category that best describes your professional relationship to the child or family involved in this report.",
+        "required": true,
+        "options": ["Healthcare professional", "Educator", "Law enforcement", "Other"]
+      },
+      {
+        "id": "hotline_wait",
+        "type": "likert",
+        "label": "Hotline wait time",
+        "description": "How long did you wait on hold before speaking with a screener during your most recent hotline contact?",
+        "required": true
+      },
+      {
+        "id": "professionalism",
+        "type": "likert",
+        "label": "Screener professionalism",
+        "description": "How professional and respectful was the screener who handled your report?",
+        "required": true
+      },
+      {
+        "id": "next_steps_clarity",
+        "type": "likert",
+        "label": "Clarity of next steps",
+        "description": "How clearly did staff explain what would happen after your 51A was filed?",
+        "required": true
+      },
+      {
+        "id": "notification_timely",
+        "type": "likert",
+        "label": "Outcome notification timeliness",
+        "description": "How timely was notification about the outcome or status of your filing?",
+        "required": true
+      },
+      {
+        "id": "filing_reference",
+        "type": "text",
+        "label": "Filing reference",
+        "description": "Your 51A filing reference number. This is pre-filled from your secure survey link when available.",
+        "required": false
+      },
+      {
+        "id": "comment",
+        "type": "text",
+        "label": "Optional comment",
+        "description": "Share any additional context (up to 500 characters). Do not include names or other identifying details.",
+        "required": false
+      }
+    ]
+  },
+  "tpl_vol_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "training_quality",
+        "type": "likert",
+        "label": "Training content quality",
+        "description": "How useful and well-organized was the training content for your volunteer role?",
+        "required": true
+      },
+      {
+        "id": "facilitator",
+        "type": "likert",
+        "label": "Facilitator effectiveness",
+        "description": "How effectively did the facilitator engage participants and answer questions?",
+        "required": true
+      },
+      {
+        "id": "resource_gaps",
+        "type": "text",
+        "label": "Resource gaps observed",
+        "description": "Describe any materials, tools, or support you felt were missing during the event.",
+        "required": false
+      },
+      {
+        "id": "priority_flag",
+        "type": "dropdown",
+        "label": "Flag as high priority?",
+        "description": "Indicate if this feedback requires urgent follow-up by program staff.",
+        "options": ["No", "Yes"],
+        "required": false
+      }
+    ]
+  },
+  "tpl_att_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "timeliness",
+        "type": "likert",
+        "label": "Document production timeliness",
+        "description": "How timely was DCF in producing documents required for this legal milestone?",
+        "required": true
+      },
+      {
+        "id": "completeness",
+        "type": "likert",
+        "label": "Case record completeness",
+        "description": "How complete and accurate was the case record material you received?",
+        "required": true
+      },
+      {
+        "id": "late_docs",
+        "type": "multi_select",
+        "label": "Late or incomplete document types",
+        "description": "Select all document types that were late or incomplete, if any.",
+        "options": ["Service plan", "Court report", "Correspondence", "Other"]
+      },
+      {
+        "id": "attestation",
+        "type": "attestation",
+        "label": "I attest this submission is accurate and complies with agency policy (ATT-04)",
+        "description": "By checking this box you confirm the information provided is accurate to the best of your knowledge.",
+        "required": true
+      }
+    ]
+  },
+  "tpl_fp_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "visit_quality",
+        "type": "likert",
+        "label": "Caseworker visit quality",
+        "description": "How satisfied are you with the quality and consistency of caseworker visits in the past 60 days?",
+        "required": true
+      },
+      {
+        "id": "responsiveness",
+        "type": "likert",
+        "label": "Staff responsiveness",
+        "description": "How quickly did DCF staff respond to your questions or concerns?",
+        "required": true
+      },
+      {
+        "id": "stipend_timely",
+        "type": "likert",
+        "label": "Stipend timeliness",
+        "description": "How timely have foster care stipend payments been during this placement period?",
+        "required": true
+      },
+      {
+        "id": "placement_id",
+        "type": "text",
+        "label": "Placement ID",
+        "description": "Your placement identifier. Pre-filled from your secure survey link when available.",
+        "required": false
+      }
+    ]
+  },
+  "tpl_cls_fp_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "overall_satisfaction",
+        "type": "likert",
+        "label": "Overall satisfaction",
+        "description": "Overall, how satisfied are you with DCF support during case closure?",
+        "required": true
+      },
+      {
+        "id": "narrative",
+        "type": "text",
+        "label": "Closure narrative",
+        "description": "Optional narrative about your closure experience (up to 1000 characters).",
+        "required": false
+      }
+    ]
+  },
+  "tpl_cls_att_v1": {
+    "nextStepsLabel": "Next Steps",
+    "questions": [
+      {
+        "id": "process_adherence",
+        "type": "likert",
+        "label": "Process adherence",
+        "description": "How well did DCF adhere to required legal and procedural steps at closure?",
+        "required": true
+      },
+      {
+        "id": "attestation",
+        "type": "attestation",
+        "label": "Legal attestation (ATT-04)",
+        "description": "Attest that this closure feedback is accurate and submitted in compliance with policy.",
+        "required": true
+      }
+    ]
+  }
+}

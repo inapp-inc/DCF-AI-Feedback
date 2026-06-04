@@ -1,0 +1,11 @@
+# Deployment secrets (HF token) — use docker/.env for packaging only
+docker/.env
+
+# Archives
+dist/
+*.zip
+
+# Local DB / logs
+codebase/backend/data/
+*.db
+*.db-*

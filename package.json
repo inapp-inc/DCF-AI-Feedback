@@ -1,0 +1,7 @@
+{
+  "name": "dcf-ai-feedback",
+  "private": true,
+  "scripts": {
+    "demo:reset": "npm --prefix codebase/backend run migrate && npm --prefix codebase/backend run seed && npm --prefix codebase/backend run test:all && npm --prefix codebase/backend run test:attestation && npm --prefix codebase/backend run verify:ai && npm --prefix codebase/backend run smoke:reports"
+  }
+}

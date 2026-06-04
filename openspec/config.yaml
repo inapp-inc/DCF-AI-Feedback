@@ -1,0 +1,18 @@
+project: DCF AI Feedback Platform
+version: 0.1.0
+owners:
+  - DCF Leadership
+  - DCF IT and Compliance
+  - InApp Engineering
+source_inputs:
+  - DCF_AI_Feedback_System_BRD.docx.md
+  - ifamilynet.html
+rules:
+  - Keep modular monolith boundaries explicit before service extraction.
+  - Treat OpenAPI as the contract for frontend and backend.
+  - No AI output may trigger automated consequence without human review.
+  - Enforce role-segregated access and audit trails for all actions.
+  - Use SQLite as primary datastore for demo phase.
+  - Use static-login auth profiles for local demo mode.
+  - Keep analytics rendered in-app (Chart.js) for demo phase.
+  - Use Hugging Face inference endpoints for AI processing in demo phase.

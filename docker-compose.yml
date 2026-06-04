@@ -1,0 +1,21 @@
+# One container: UI + API. Expose port 4020 on the host (map to nginx :80 inside).
+# Point your existing host nginx at http://127.0.0.1:4020/dcffeedback/
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.app
+      args:
+        VITE_BASE_PATH: "${APP_BASE_PATH:-/dcffeedback}/"
+        VITE_API_BASE_URL: "${APP_BASE_PATH:-/dcffeedback}/v1"
+    ports:
+      - "${APP_HTTP_PORT:-4020}:80"
+    env_file:
+      - ./.env
+    volumes:
+      - dcf-feedback-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  dcf-feedback-data:

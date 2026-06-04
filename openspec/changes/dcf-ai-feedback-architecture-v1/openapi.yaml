@@ -1,0 +1,972 @@
+openapi: 3.0.3
+info:
+  title: DCF AI Feedback Platform API
+  version: 0.1.0
+  description: |
+    Contract baseline for event-triggered feedback lifecycle, AI classification, and supervisor triage.
+    Demo mode assumptions: static logins for auth, local-first runtime, SQLite-backed persistence.
+    Hugging Face config baseline (adapted from DCF-Intake demo):
+    LLM_PROVIDER=huggingface, HF_MODEL=Qwen/Qwen2.5-7B-Instruct,
+    HF_API_BASE=https://router.huggingface.co/v1, LLM_REQUEST_TIMEOUT_MS=600000,
+    token alias support via HF_API_TOKEN or HUGGINGFACE_API_KEY.
+servers:
+  - url: https://api.dcf-feedback.local/v1
+security:
+  - demoAuthHeader: []
+tags:
+  - name: auth
+  - name: triggers
+  - name: surveys
+  - name: submissions
+  - name: supervisor
+paths:
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Login with static demo credentials
+      operationId: loginDemoUser
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginIn'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+        '401':
+          description: Invalid credentials
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Logout current demo session
+      operationId: logoutDemoUser
+      responses:
+        '204':
+          description: Logout successful
+  /auth/session:
+    get:
+      tags: [auth]
+      summary: Get current session info
+      operationId: getCurrentSession
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionInfo'
+  /triggers/events:
+    post:
+      tags: [triggers]
+      summary: Ingest iFamilyNet trigger event
+      operationId: ingestTriggerEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TriggerEventIn'
+      responses:
+        '202':
+          description: Event accepted for orchestration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TriggerEventAccepted'
+        '400':
+          description: Invalid event payload
+  /public/surveys/{token}:
+    get:
+      tags: [public]
+      summary: Load survey for token (no auth)
+      operationId: getPublicSurvey
+      security: []
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey payload for fill UI
+        '410':
+          description: Token expired or consumed
+  /public/surveys/{token}/submit:
+    post:
+      tags: [public]
+      summary: Submit survey via token (no auth)
+      operationId: submitPublicSurvey
+      security: []
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                answers:
+                  type: object
+                aiOptOut:
+                  type: boolean
+      responses:
+        '201':
+          description: Submission accepted
+  /public/portal/surveys:
+    get:
+      tags: [public]
+      summary: List open surveys for partner portal role
+      operationId: listPortalSurveys
+      security: []
+      parameters:
+        - in: query
+          name: userGroup
+          required: true
+          schema:
+            $ref: '#/components/schemas/UserGroup'
+      responses:
+        '200':
+          description: Portal survey links
+  /forms/templates:
+    get:
+      tags: [surveys]
+      summary: List form templates
+      operationId: listFormTemplates
+      parameters:
+        - in: query
+          name: userGroup
+          schema:
+            $ref: '#/components/schemas/UserGroup'
+      responses:
+        '200':
+          description: Templates list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FormTemplate'
+    post:
+      tags: [surveys]
+      summary: Create form template
+      operationId: createFormTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateIn'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+  /forms/templates/{templateId}:
+    put:
+      tags: [surveys]
+      summary: Update form template
+      operationId: updateFormTemplate
+      parameters:
+        - in: path
+          name: templateId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormTemplateIn'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormTemplate'
+  /forms/instances:
+    post:
+      tags: [surveys]
+      summary: Create form instance from trigger context
+      operationId: createFormInstance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FormInstanceIn'
+      responses:
+        '201':
+          description: Form instance created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyInstance'
+  /forms/instances/{instanceId}/links:
+    post:
+      tags: [surveys]
+      summary: Generate dynamic link token
+      operationId: createDynamicLink
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Dynamic link generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DynamicLink'
+  /forms/instances/{instanceId}/send:
+    post:
+      tags: [surveys]
+      summary: Send survey and return custom link
+      operationId: sendSurveyLink
+      parameters:
+        - in: path
+          name: instanceId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Survey link sent and returned for UI display
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendSurveyResponse'
+  /forms/tokens/{token}/validate:
+    post:
+      tags: [surveys]
+      summary: Validate dynamic token
+      operationId: validateDynamicToken
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Token validation status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidation'
+  /surveys/{surveyInstanceId}:
+    get:
+      tags: [surveys]
+      summary: Fetch survey form metadata and questions
+      operationId: getSurveyInstance
+      parameters:
+        - $ref: '#/components/parameters/SurveyInstanceId'
+      responses:
+        '200':
+          description: Survey metadata returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurveyInstance'
+        '404':
+          description: Survey not found or expired
+  /surveys/{surveyInstanceId}/submit:
+    post:
+      tags: [submissions]
+      summary: Submit survey response
+      operationId: submitSurvey
+      parameters:
+        - $ref: '#/components/parameters/SurveyInstanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackSubmissionIn'
+      responses:
+        '201':
+          description: Submission accepted and queued for AI processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackSubmissionAccepted'
+        '409':
+          description: Duplicate or already submitted
+  /submissions/{submissionId}/ai-result:
+    get:
+      tags: [submissions]
+      summary: Retrieve AI processing outcome
+      operationId: getAiResult
+      parameters:
+        - $ref: '#/components/parameters/SubmissionId'
+      responses:
+        '200':
+          description: AI result payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiInference'
+        '404':
+          description: Submission or result not found
+  /ai/health:
+    get:
+      tags: [submissions]
+      summary: Check AI provider health status
+      operationId: getAiHealth
+      responses:
+        '200':
+          description: AI health payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiHealth'
+  /supervisor/queue:
+    get:
+      tags: [supervisor]
+      summary: Retrieve supervisor action queue
+      operationId: listSupervisorQueue
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [open, in_review, resolved]
+        - in: query
+          name: officeId
+          schema:
+            type: string
+        - in: query
+          name: userGroup
+          schema:
+            $ref: '#/components/schemas/UserGroup'
+      responses:
+        '200':
+          description: Queue items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SupervisorQueueItem'
+  /supervisor/queue/{queueItemId}/assign:
+    post:
+      tags: [supervisor]
+      summary: Assign queue item
+      operationId: assignQueueItem
+      parameters:
+        - in: path
+          name: queueItemId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueAssignIn'
+      responses:
+        '200':
+          description: Queue item assigned
+  /supervisor/queue/{queueItemId}/status:
+    post:
+      tags: [supervisor]
+      summary: Update queue item status
+      operationId: updateQueueStatus
+      parameters:
+        - in: path
+          name: queueItemId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueueStatusIn'
+      responses:
+        '200':
+          description: Queue item status updated
+  /analytics/kpis:
+    get:
+      tags: [supervisor]
+      summary: Retrieve KPI aggregates
+      operationId: getAnalyticsKpis
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: officeId
+          schema:
+            type: string
+        - in: query
+          name: userGroup
+          schema:
+            $ref: '#/components/schemas/UserGroup'
+      responses:
+        '200':
+          description: KPI response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KpiResponse'
+  /analytics/trends:
+    get:
+      tags: [supervisor]
+      summary: Retrieve trend series for charts
+      operationId: getAnalyticsTrends
+      responses:
+        '200':
+          description: Trend response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrendResponse'
+  /analytics/anomalies:
+    get:
+      tags: [supervisor]
+      summary: Retrieve anomaly signals
+      operationId: getAnalyticsAnomalies
+      responses:
+        '200':
+          description: Anomaly response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyResponse'
+  /exports:
+    post:
+      tags: [supervisor]
+      summary: Create export job
+      operationId: createExportJob
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportJobIn'
+      responses:
+        '202':
+          description: Export accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+  /exports/{exportId}:
+    get:
+      tags: [supervisor]
+      summary: Get export job status
+      operationId: getExportJob
+      parameters:
+        - in: path
+          name: exportId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Export job payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportJob'
+  /admin/config:
+    get:
+      tags: [supervisor]
+      summary: Retrieve admin runtime configuration
+      operationId: getAdminConfig
+      responses:
+        '200':
+          description: Current config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminConfig'
+    put:
+      tags: [supervisor]
+      summary: Update admin runtime configuration
+      operationId: updateAdminConfig
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminConfig'
+      responses:
+        '200':
+          description: Updated config
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminConfig'
+  /audit/logs:
+    get:
+      tags: [supervisor]
+      summary: Query audit logs
+      operationId: listAuditLogs
+      parameters:
+        - in: query
+          name: actor
+          schema:
+            type: string
+        - in: query
+          name: action
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+  /compliance/retention/run:
+    post:
+      tags: [supervisor]
+      summary: Run retention policy job
+      operationId: runRetentionPolicy
+      responses:
+        '202':
+          description: Retention job queued
+components:
+  securitySchemes:
+    demoAuthHeader:
+      type: apiKey
+      in: header
+      name: x-demo-user
+      description: Static demo login identity key that maps to a predefined role profile.
+  parameters:
+    SurveyInstanceId:
+      name: surveyInstanceId
+      in: path
+      required: true
+      schema:
+        type: string
+    SubmissionId:
+      name: submissionId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    UserGroup:
+      type: string
+      enum: [mandated_reporter, volunteer, attorney, foster_parent]
+    TriggerEventIn:
+      type: object
+      required: [eventId, triggerType, userGroup, occurredAt]
+      properties:
+        eventId:
+          type: string
+        triggerType:
+          type: string
+          enum: [fifty_one_a, volunteer_event, legal_milestone, placement_milestone, case_closure]
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+        filingId:
+          type: string
+        caseId:
+          type: string
+        placementId:
+          type: string
+        milestoneId:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+    TriggerEventAccepted:
+      type: object
+      properties:
+        eventId:
+          type: string
+        orchestrationStatus:
+          type: string
+          enum: [accepted, duplicate_ignored]
+    SurveyQuestion:
+      type: object
+      required: [id, type, label]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [likert, text, multi_select, dropdown, attestation]
+        label:
+          type: string
+        required:
+          type: boolean
+        options:
+          type: array
+          items:
+            type: string
+    FormTemplateIn:
+      type: object
+      required: [name, userGroup, questions]
+      properties:
+        name:
+          type: string
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+        version:
+          type: integer
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+        nextStepsLabel:
+          type: string
+          default: Next Steps
+    FormTemplate:
+      allOf:
+        - $ref: '#/components/schemas/FormTemplateIn'
+        - type: object
+          properties:
+            templateId:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    FormInstanceIn:
+      type: object
+      required: [templateId, userGroup]
+      properties:
+        templateId:
+          type: string
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+        triggerRef:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    DynamicLink:
+      type: object
+      properties:
+        instanceId:
+          type: string
+        token:
+          type: string
+        url:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    TokenValidation:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        reason:
+          type: string
+    SendSurveyResponse:
+      type: object
+      properties:
+        instanceId:
+          type: string
+        status:
+          type: string
+          enum: [sent, queued]
+        customLink:
+          type: string
+        deliveryChannel:
+          type: string
+          enum: [email, portal, both]
+    LoginIn:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    SessionInfo:
+      type: object
+      properties:
+        userId:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+        officeId:
+          type: string
+        authenticated:
+          type: boolean
+    SurveyInstance:
+      type: object
+      required: [surveyInstanceId, userGroup, expiresAt, questions]
+      properties:
+        surveyInstanceId:
+          type: string
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+        triggerRef:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        aiDisclosureRequired:
+          type: boolean
+        questions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SurveyQuestion'
+    FeedbackSubmissionIn:
+      type: object
+      required: [answers]
+      properties:
+        answers:
+          type: object
+          additionalProperties: true
+        aiOptOut:
+          type: boolean
+          default: false
+    FeedbackSubmissionAccepted:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        aiProcessingStatus:
+          type: string
+          enum: [queued, processing, completed]
+        inferenceProvider:
+          type: string
+          enum: [huggingface]
+    AiInference:
+      type: object
+      properties:
+        submissionId:
+          type: string
+        topic:
+          type: string
+        sentimentScore:
+          type: number
+          minimum: 1
+          maximum: 5
+        urgency:
+          type: string
+          enum: [low, medium, high]
+        privilegeTagged:
+          type: boolean
+        explainabilitySummary:
+          type: string
+        recommendedRoute:
+          type: string
+          enum: [closed_loop_ai, supervisor_queue, legal_policy_queue]
+        provider:
+          type: string
+          enum: [huggingface]
+        timeoutMs:
+          type: integer
+          example: 600000
+        retryCount:
+          type: integer
+          example: 2
+    SupervisorQueueItem:
+      type: object
+      properties:
+        queueItemId:
+          type: string
+        submissionId:
+          type: string
+        userGroup:
+          $ref: '#/components/schemas/UserGroup'
+        officeId:
+          type: string
+        status:
+          type: string
+          enum: [open, in_review, resolved]
+        priority:
+          type: string
+          enum: [normal, high, critical]
+        reason:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    QueueAssignIn:
+      type: object
+      required: [assignee]
+      properties:
+        assignee:
+          type: string
+    QueueStatusIn:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [open, in_review, resolved]
+        note:
+          type: string
+    KpiResponse:
+      type: object
+      properties:
+        totalSubmissions:
+          type: integer
+        avgSentiment:
+          type: number
+        highUrgencyCount:
+          type: integer
+        responseRate:
+          type: number
+    TrendPoint:
+      type: object
+      properties:
+        bucket:
+          type: string
+        submissions:
+          type: integer
+        avgScore:
+          type: number
+    TrendResponse:
+      type: object
+      properties:
+        points:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendPoint'
+    AnomalySignal:
+      type: object
+      properties:
+        signalId:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        summary:
+          type: string
+    AnomalyResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnomalySignal'
+    ExportJobIn:
+      type: object
+      required: [format]
+      properties:
+        format:
+          type: string
+          enum: [csv, pdf]
+        filters:
+          type: object
+          additionalProperties: true
+    ExportJob:
+      type: object
+      properties:
+        exportId:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        format:
+          type: string
+          enum: [csv, pdf]
+        downloadUrl:
+          type: string
+    AdminConfig:
+      type: object
+      properties:
+        triggerWindows:
+          type: object
+          additionalProperties: true
+        reminderCadence:
+          type: object
+          additionalProperties: true
+        urgencyThreshold:
+          type: number
+        aiDisclosureRequired:
+          type: boolean
+        llmProvider:
+          type: string
+          enum: [huggingface]
+        hfModel:
+          type: string
+          default: Qwen/Qwen2.5-7B-Instruct
+        hfApiBase:
+          type: string
+          default: https://router.huggingface.co/v1
+        llmRequestTimeoutMs:
+          type: integer
+          default: 600000
+        hfTokenSource:
+          type: string
+          description: HF_API_TOKEN or HUGGINGFACE_API_KEY
+          enum: [HF_API_TOKEN, HUGGINGFACE_API_KEY]
+    AiHealth:
+      type: object
+      properties:
+        provider:
+          type: string
+          enum: [huggingface]
+        status:
+          type: string
+          enum: [up, degraded, down]
+        model:
+          type: string
+        checkedAt:
+          type: string
+          format: date-time
+    AuditEvent:
+      type: object
+      properties:
+        eventId:
+          type: string
+        actor:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+          additionalProperties: true

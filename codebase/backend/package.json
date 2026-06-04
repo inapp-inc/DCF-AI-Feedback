@@ -1,0 +1,36 @@
+{
+  "name": "dcf-feedback-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
+    "verify:ai": "tsx scripts/smoke-ai.ts",
+    "smoke:reports": "tsx scripts/smoke-reports.ts",
+    "test:foundation": "tsx scripts/test-foundation.ts",
+    "test:processing": "tsx scripts/test-processing.ts",
+    "test:analytics": "tsx scripts/test-analytics.ts",
+    "test:attestation": "tsx scripts/test-attestation.ts",
+    "demo:reset": "npm run migrate && npm run seed && npm run test:all && npm run test:attestation && npm run verify:ai && npm run smoke:reports",
+    "test:all": "npm run test:foundation && npm run test:processing && npm run test:analytics"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "uuid": "^11.0.3",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
