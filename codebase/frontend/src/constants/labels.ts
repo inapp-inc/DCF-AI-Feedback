@@ -26,7 +26,7 @@ const QUEUE_STATUS_LABELS: Record<string, string> = {
 const REPORT_TYPE_LABELS: Record<string, string> = {
   weekly_brief: "Weekly brief",
   monthly_division: "Monthly division",
-  quarterly_cfsr: "Quarterly CFSR",
+  quarterly_cfsr: "Quarterly quality review",
 };
 
 const TRIGGER_JOB_STATUS_LABELS: Record<string, string> = {
@@ -34,6 +34,11 @@ const TRIGGER_JOB_STATUS_LABELS: Record<string, string> = {
   fired: "Sent",
   completed: "Completed",
   pending: "Pending",
+};
+
+const INTERNAL_TOKEN_LABELS: Record<string, string> = {
+  fifty_one_a: "Intake report",
+  ifamilynet: "Staff workflow",
 };
 
 function titleCaseFromSnake(value: string): string {
@@ -79,6 +84,9 @@ export function humanizeUserFacingText(text: string): string {
     out = out.replaceAll(id, label);
   }
   for (const [id, label] of Object.entries(REPORT_TYPE_LABELS)) {
+    out = out.replaceAll(id, label);
+  }
+  for (const [id, label] of Object.entries(INTERNAL_TOKEN_LABELS)) {
     out = out.replaceAll(id, label);
   }
   return out;

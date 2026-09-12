@@ -29,7 +29,7 @@ export function createApp() {
   api.use(authRouter);
   api.use(publicRouter);
 
-  /** iFamilyNet staff: forms, triggers, survey dispatch and staff submissions */
+  /** Staff workflow: forms, triggers, survey dispatch and staff submissions */
   const staffApi = express.Router();
   staffApi.use(requireAuth);
   staffApi.use(formsRouter);

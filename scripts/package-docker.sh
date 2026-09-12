@@ -187,7 +187,7 @@ chmod -R u+rwX "${PKG_DIR}" || true
 chmod +x "${PKG_DIR}/scripts/"*.sh 2>/dev/null || true
 
 cat > "${PKG_DIR}/DEPLOY_README.txt" <<EOF
-DCF AI Feedback — Docker package
+Feedback Analytics — Docker package
 version=${VERSION} git=${GIT_SHA} built=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 Deploy on VM (default install directory /var/www/dcf-feedback):
@@ -195,15 +195,15 @@ Deploy on VM (default install directory /var/www/dcf-feedback):
   sudo ./scripts/deploy-docker.sh /path/to/dcf-feedback-docker.zip
 
 Stack: 1 container (nginx UI + Node API). Host port 4020 -> container :80.
-Point your existing host nginx at http://127.0.0.1:4020/dcffeedback/
+Point your existing host nginx at http://127.0.0.1:4020/feedback/
 
 URL path prefix (relative, not a hostname):
-  APP_BASE_PATH=/dcffeedback
+  APP_BASE_PATH=/feedback
   APP_HTTP_PORT=4020
 
 Local smoke URLs on the VM:
-  http://127.0.0.1:4020/dcffeedback/
-  http://127.0.0.1:4020/dcffeedback/v1/health
+  http://127.0.0.1:4020/feedback/
+  http://127.0.0.1:4020/feedback/v1/health
 
 This package includes .env with HF_API_TOKEN preconfigured.
 EOF

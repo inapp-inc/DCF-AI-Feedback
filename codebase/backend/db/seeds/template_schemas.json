@@ -28,7 +28,7 @@
         "id": "next_steps_clarity",
         "type": "likert",
         "label": "Clarity of next steps",
-        "description": "How clearly did staff explain what would happen after your 51A was filed?",
+        "description": "How clearly did staff explain what would happen after your intake report was filed?",
         "required": true
       },
       {
@@ -42,7 +42,7 @@
         "id": "filing_reference",
         "type": "text",
         "label": "Filing reference",
-        "description": "Your 51A filing reference number. This is pre-filled from your secure survey link when available.",
+        "description": "Your intake filing reference number. This is pre-filled from your secure survey link when available.",
         "required": false
       },
       {
@@ -95,7 +95,7 @@
         "id": "timeliness",
         "type": "likert",
         "label": "Document production timeliness",
-        "description": "How timely was DCF in producing documents required for this legal milestone?",
+        "description": "How timely was the agency in producing documents required for this legal milestone?",
         "required": true
       },
       {
@@ -135,7 +135,7 @@
         "id": "responsiveness",
         "type": "likert",
         "label": "Staff responsiveness",
-        "description": "How quickly did DCF staff respond to your questions or concerns?",
+        "description": "How quickly did agency staff respond to your questions or concerns?",
         "required": true
       },
       {
@@ -161,7 +161,7 @@
         "id": "overall_satisfaction",
         "type": "likert",
         "label": "Overall satisfaction",
-        "description": "Overall, how satisfied are you with DCF support during case closure?",
+        "description": "Overall, how satisfied are you with agency support during case closure?",
         "required": true
       },
       {
@@ -180,7 +180,7 @@
         "id": "process_adherence",
         "type": "likert",
         "label": "Process adherence",
-        "description": "How well did DCF adhere to required legal and procedural steps at closure?",
+        "description": "How well did the agency adhere to required legal and procedural steps at closure?",
         "required": true
       },
       {

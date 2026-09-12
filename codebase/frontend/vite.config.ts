@@ -11,7 +11,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Local dev: match production path (e.g. /dcffeedback/v1) when VITE_API_BASE_URL is set.
+      // Local dev: match production path (e.g. /feedback/v1) when VITE_API_BASE_URL is set.
       [apiProxyPrefix]: {
         target: "http://localhost:8080",
         changeOrigin: true,

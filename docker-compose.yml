@@ -1,5 +1,5 @@
 # One container: UI + API. Expose port 4020 on the host (map to nginx :80 inside).
-# Point your existing host nginx at http://127.0.0.1:4020/dcffeedback/
+# Point your existing host nginx at http://127.0.0.1:4020/feedback/
 
 services:
   app:

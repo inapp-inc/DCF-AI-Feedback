@@ -14,7 +14,7 @@ const PLATFORM_COPY: Record<
   StaffPlatform,
   { title: string; subtitle: string; brandLine: string }
 > = {
-  ifamilynet: {
+  workflow: {
     title: "Case Workflow sign-in",
     subtitle: "Staff workflow — triggers, dispatch, and milestone surveys",
     brandLine: "Case workflow and survey dispatch for staff.",

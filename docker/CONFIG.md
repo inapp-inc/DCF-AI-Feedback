@@ -16,11 +16,11 @@ Removed obsolete files: `docker/nginx-proxy.conf.template` (old 3-container prox
 
 | Setting | Example | Used by |
 |---------|---------|---------|
-| `APP_BASE_PATH` | `/dcffeedback` | Host nginx → `http://127.0.0.1:4020/dcffeedback/` |
+| `APP_BASE_PATH` | `/feedback` | Host nginx → `http://127.0.0.1:4020/feedback/` |
 | `APP_HTTP_PORT` | `4020` | Host port → container nginx `:80` |
-| `VITE_BASE_PATH` | `/dcffeedback/` | Frontend build (trailing slash) |
-| `VITE_API_BASE_URL` | `/dcffeedback/v1` | Browser API calls (no trailing slash) |
-| `PUBLIC_SURVEY_BASE_URL` | `/dcffeedback/survey` | Survey links from API |
+| `VITE_BASE_PATH` | `/feedback/` | Frontend build (trailing slash) |
+| `VITE_API_BASE_URL` | `/feedback/v1` | Browser API calls (no trailing slash) |
+| `PUBLIC_SURVEY_BASE_URL` | `/feedback/survey` | Survey links from API |
 | `PUBLIC_ORIGIN` | _(empty)_ | Optional absolute link prefix |
 
 Inside the container:

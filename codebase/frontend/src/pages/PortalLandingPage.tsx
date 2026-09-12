@@ -5,7 +5,7 @@ import { formatUserGroup } from "../constants/labels";
 import { getPortalSurveys } from "../api/client";
 
 const GROUPS = [
-  { id: "mandated_reporter", title: "Mandated Reporters", desc: "Post-51A intake feedback", accent: C.purple },
+  { id: "mandated_reporter", title: "Mandated Reporters", desc: "Post-intake report feedback", accent: C.purple },
   { id: "volunteer", title: "Volunteers", desc: "Training and event surveys", accent: "#d18d1f" },
   { id: "attorney", title: "Attorneys", desc: "Legal milestone forms", accent: C.coral },
   { id: "foster_parent", title: "Foster Parents", desc: "Placement and closure surveys", accent: C.teal },

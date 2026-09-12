@@ -1,4 +1,4 @@
-export type StaffPlatform = "ifamilynet" | "admin";
+export type StaffPlatform = "workflow" | "admin";
 
 export const SESSION_KEYS = {
   username: "demo_username",
@@ -7,12 +7,13 @@ export const SESSION_KEYS = {
 } as const;
 
 export function isStaffPlatform(value: string | undefined): value is StaffPlatform {
-  return value === "ifamilynet" || value === "admin";
+  return value === "workflow" || value === "admin";
 }
 
 export function getLoggedInPlatform(): StaffPlatform | null {
   const p = sessionStorage.getItem(SESSION_KEYS.platform);
-  return isStaffPlatform(p ?? undefined) ? (p as StaffPlatform) : null;
+  if (p === "ifamilynet") return "workflow";
+  return p === "workflow" || p === "admin" ? p : null;
 }
 
 export function clearStaffSession() {
@@ -22,7 +23,7 @@ export function clearStaffSession() {
 }
 
 export function staffHomePath(platform: StaffPlatform): string {
-  return platform === "admin" ? "/admin" : "/ifamilynet";
+  return platform === "admin" ? "/admin" : "/workflow";
 }
 
 export function loginPath(platform: StaffPlatform): string {

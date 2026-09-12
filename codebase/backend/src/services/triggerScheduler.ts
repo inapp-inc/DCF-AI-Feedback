@@ -35,7 +35,7 @@ export async function processReminders() {
     await sendNotification({
       formInstanceId: row.form_instance_id,
       channel: "email",
-      recipient: "reminder.demo@dcf.ma.gov",
+      recipient: "reminder.demo@agency.example",
       subject: "Reminder: Feedback survey pending",
       body: `Your survey is still open: ${row.custom_link}`,
       notificationType: "reminder",

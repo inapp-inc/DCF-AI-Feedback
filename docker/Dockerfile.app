@@ -4,8 +4,8 @@
 FROM node:20-alpine AS fe-build
 WORKDIR /fe
 RUN apk add --no-cache libc6-compat
-ARG VITE_BASE_PATH=/dcffeedback/
-ARG VITE_API_BASE_URL=/dcffeedback/v1
+ARG VITE_BASE_PATH=/feedback/
+ARG VITE_API_BASE_URL=/feedback/v1
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 COPY codebase/frontend/package.json codebase/frontend/package-lock.json ./

@@ -32,7 +32,7 @@
   - admin app is a dedicated DCF experience for completion tracking, analytics, and survey form configuration
   - Hugging Face runtime defaults aligned to demo config:
     - `LLM_PROVIDER=huggingface`
-    - `HF_MODEL=Qwen/Qwen2.5-7B-Instruct`
+    - `HF_MODEL=Qwen/Qwen2.5-7B-Instruct:featherless-ai`
     - `HF_API_BASE=https://router.huggingface.co/v1`
     - `LLM_REQUEST_TIMEOUT_MS=600000`
     - token alias fallback via `HF_API_TOKEN` or `HUGGINGFACE_API_KEY`

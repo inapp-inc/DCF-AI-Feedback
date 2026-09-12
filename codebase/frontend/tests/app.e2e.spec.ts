@@ -1,22 +1,23 @@
 import { expect, test } from "@playwright/test";
 
-async function loginToPlatform(page: import("@playwright/test").Page, platform: "ifamilynet" | "admin") {
+async function loginToPlatform(page: import("@playwright/test").Page, platform: "workflow" | "admin") {
   await page.goto(`/login/${platform}`);
   await page.locator("input").nth(0).fill("admin_demo");
   await page.locator("input").nth(1).fill("demo");
   await page.getByRole("button", { name: "Sign in" }).click();
 }
 
-test("platform selector then iFamilyNet login and workflow", async ({ page }) => {
+test("platform selector then workflow login", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Choose a platform to open:")).toBeVisible();
-  await page.getByRole("heading", { name: "iFamilyNet Platform" }).click();
-  await expect(page).toHaveURL(/\/login\/ifamilynet/);
+  await expect(page.getByText("Feedback Analytics Solution")).toBeVisible();
+  await page.getByRole("button", { name: /Other platforms/i }).click();
+  await page.getByRole("heading", { name: "Client's core solution" }).click();
+  await expect(page).toHaveURL(/\/login\/workflow/);
   await page.locator("input").nth(0).fill("admin_demo");
   await page.locator("input").nth(1).fill("demo");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).toHaveURL(/\/ifamilynet/);
-  await expect(page.getByText("Commonwealth of Massachusetts")).toBeVisible();
+  await expect(page).toHaveURL(/\/workflow/);
+  await expect(page.getByText("North Region")).toBeVisible();
   await expect(page.getByRole("button", { name: "Send Survey" }).first()).toBeVisible();
   await page.getByRole("button", { name: "Send Survey" }).first().click();
   await expect(page.getByText("Survey sent").first()).toBeVisible();
@@ -26,7 +27,7 @@ test("partner portal and public survey page load", async ({ page }) => {
   await page.goto("/portal");
   await expect(page.getByText("Survey List")).toBeVisible();
   await page.getByText("Mandated Reporters").click();
-  await expect(page.getByRole("heading", { name: /Open surveys — Mandated Reporters/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Survey list — Mandated Reporters/i })).toBeVisible();
 });
 
 test("public survey token route shows form or expiry message", async ({ page }) => {
@@ -63,6 +64,6 @@ test("platform selector then admin login and analytics console", async ({ page }
 test("staff routes redirect to platform login when unauthenticated", async ({ page }) => {
   await page.goto("/admin");
   await expect(page).toHaveURL(/\/login\/admin/);
-  await page.goto("/ifamilynet");
-  await expect(page).toHaveURL(/\/login\/ifamilynet/);
+  await page.goto("/workflow");
+  await expect(page).toHaveURL(/\/login\/workflow/);
 });

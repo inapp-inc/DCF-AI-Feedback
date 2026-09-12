@@ -12,10 +12,10 @@ const TEMPLATE_BY_GROUP: Record<string, string> = {
 };
 
 const DEMO_RECIPIENT: Record<string, string> = {
-  mandated_reporter: "reporter.demo@dcf.ma.gov",
-  volunteer: "volunteer.demo@dcf.ma.gov",
-  attorney: "attorney.demo@dcf.ma.gov",
-  foster_parent: "foster.demo@dcf.ma.gov",
+  mandated_reporter: "reporter.demo@agency.example",
+  volunteer: "volunteer.demo@agency.example",
+  attorney: "attorney.demo@agency.example",
+  foster_parent: "foster.demo@agency.example",
 };
 
 export function computeFireAt(triggerType: string, occurredAtIso: string): string {
@@ -63,7 +63,7 @@ export async function dispatchSurveyForJob(jobId: string, sentBy = "scheduler") 
 
   await pool.query(
     `INSERT INTO form_instances (form_instance_id, template_id, user_group, trigger_ref, expires_at, office_id)
-     VALUES (?, ?, ?, ?, ?, 'Boston North')`,
+     VALUES (?, ?, ?, ?, ?, 'North Region')`,
     [instanceId, templateId, job.user_group, job.trigger_ref, expiresAt],
   );
 
@@ -84,7 +84,7 @@ export async function dispatchSurveyForJob(jobId: string, sentBy = "scheduler") 
     [newId("dsp"), instanceId, customLink, sentBy],
   );
 
-  const recipient = DEMO_RECIPIENT[job.user_group] ?? "demo@dcf.ma.gov";
+  const recipient = DEMO_RECIPIENT[job.user_group] ?? "demo@agency.example";
   await sendNotification({
     formInstanceId: instanceId,
     channel: "email",

@@ -106,7 +106,7 @@ export async function processSubmission(input: SubmitInput): Promise<SubmitResul
       attested || null,
       attested ? "v1-demo" : null,
       input.demoDemographic ?? null,
-      input.officeId ?? inst.office_id ?? "Boston North",
+      input.officeId ?? inst.office_id ?? "North Region",
       initialApprovalStatus,
     ],
   );
@@ -198,7 +198,7 @@ export async function processSubmission(input: SubmitInput): Promise<SubmitResul
         newId("q"),
         submissionId,
         inst.user_group,
-        input.officeId ?? inst.office_id ?? "Boston North",
+        input.officeId ?? inst.office_id ?? "North Region",
         inferred.urgency === "high" ? "high" : "normal",
         inferred.explainability,
         recommendedRoute === "legal_policy_queue" ? "legal_policy" : "supervisor",
@@ -234,7 +234,7 @@ async function checkNotificationCompliance(
   if (userGroup !== "mandated_reporter") return;
   const timely = answers.notification_timely ?? answers.outcome_notification;
   if (timely === undefined) return;
-  const filingRef = String(answers.filing_reference ?? "51A-2026-04412");
+  const filingRef = String(answers.filing_reference ?? "INT-2026-04412");
   const { rows } = await pool.query<{ notification_sent: number }>(
     "SELECT notification_sent FROM dcf_notification_records WHERE filing_ref = ?",
     [filingRef],
@@ -249,7 +249,7 @@ async function checkNotificationCompliance(
       [
         newId("risk"),
         submissionId,
-        `MR-08: Reporter notification outcome does not match DCF record for ${filingRef}`,
+        `MR-08: Reporter notification outcome does not match agency record for ${filingRef}`,
       ],
     );
   }

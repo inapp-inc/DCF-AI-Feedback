@@ -1,3 +1,31 @@
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+function loadLocalEnv(): void {
+  const backendDir = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+  for (const filePath of [resolve(process.cwd(), ".env"), resolve(backendDir, ".env")]) {
+    if (!existsSync(filePath)) continue;
+    for (const raw of readFileSync(filePath, "utf8").split(/\r?\n/)) {
+      const line = raw.trim();
+      if (!line || line.startsWith("#")) continue;
+      const eq = line.indexOf("=");
+      if (eq <= 0) continue;
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      if (process.env[key] === undefined) process.env[key] = value;
+    }
+  }
+}
+
+loadLocalEnv();
+
 function stripTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
 }
@@ -19,7 +47,7 @@ export const config = {
   corsOrigin: resolveCorsOrigin(process.env.CORS_ORIGIN ?? "http://localhost:5173"),
   /**
    * Base path for survey links (relative or absolute).
-   * Docker/production default: /dcffeedback/survey
+   * Docker/production default: /feedback/survey
    */
   publicSurveyBaseUrl: stripTrailingSlash(
     process.env.PUBLIC_SURVEY_BASE_URL ?? "http://localhost:5173/survey",
@@ -33,7 +61,8 @@ export const config = {
     retryBaseDelayMs: parseInt(process.env.LLM_RETRY_BASE_DELAY_MS ?? "1200", 10),
     huggingface: {
       apiBase: process.env.HF_API_BASE ?? "https://router.huggingface.co/v1",
-      model: process.env.HF_MODEL ?? "Qwen/Qwen2.5-7B-Instruct",
+      // Provider suffix pins Inference Providers routing (Together is currently down for this ID).
+      model: process.env.HF_MODEL ?? "Qwen/Qwen2.5-7B-Instruct:featherless-ai",
       apiToken: process.env.HF_API_TOKEN ?? process.env.HUGGINGFACE_API_KEY ?? "",
     },
   },

@@ -33,7 +33,7 @@ UI implementation baseline is adapted from `/Users/mahalingam/Downloads/DCF-Inta
 - AI services are consumed via Hugging Face Inference Endpoints through explicit adapter interfaces.
 - Hugging Face adapter must follow demo HF runtime baseline:
   - provider default `huggingface`
-  - model default `Qwen/Qwen2.5-7B-Instruct`
+  - model default `Qwen/Qwen2.5-7B-Instruct:featherless-ai`
   - API base default `https://router.huggingface.co/v1`
   - timeout default `600000ms`
   - token fallback order `HF_API_TOKEN` then `HUGGINGFACE_API_KEY`

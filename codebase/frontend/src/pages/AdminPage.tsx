@@ -83,7 +83,7 @@ const DEADLINE_PRESETS: Record<keyof TriggerWindows, string[]> = {
 };
 
 const DEADLINE_LABELS: Record<keyof TriggerWindows, string> = {
-  mr: "Mandated reporter (51A)",
+  mr: "Mandated reporter (intake)",
   vol: "Volunteer events",
   att: "Attorney milestones",
   fp: "Foster parent placement",

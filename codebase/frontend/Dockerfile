@@ -3,8 +3,8 @@ FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
 
-ARG VITE_BASE_PATH=/dcffeedback/
-ARG VITE_API_BASE_URL=/dcffeedback/v1
+ARG VITE_BASE_PATH=/feedback/
+ARG VITE_API_BASE_URL=/feedback/v1
 ENV VITE_BASE_PATH=$VITE_BASE_PATH
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
@@ -18,7 +18,7 @@ COPY nginx.conf.template ./
 RUN npm run build
 
 FROM nginx:1.27-alpine
-ARG APP_BASE_PATH=/dcffeedback
+ARG APP_BASE_PATH=/feedback
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY --from=build /app/nginx.conf.template /tmp/nginx.conf.template
 RUN APP_BASE="${APP_BASE_PATH%/}" \

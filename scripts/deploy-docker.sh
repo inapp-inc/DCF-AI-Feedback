@@ -3,8 +3,8 @@
 #
 # Default install directory on VM: /var/www/dcf-feedback
 # (archive contents are flattened into that path — docker-compose.yml at the root)
-# Single container on host port 4020 (nginx + API). Point host nginx at 127.0.0.1:4020/dcffeedback/
-# URL base path (relative): /dcffeedback
+# Single container on host port 4020 (nginx + API). Point host nginx at 127.0.0.1:4020/feedback/
+# URL base path (relative): /feedback
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ SKIP_BUILD=0
 RUN_SMOKE=1
 ENV_FILE_OVERRIDE=""
 
-APP_BASE_PATH_DEFAULT="/dcffeedback"
+APP_BASE_PATH_DEFAULT="/feedback"
 APP_HTTP_PORT_DEFAULT="4020"
 
 usage() {
@@ -28,7 +28,7 @@ Options:
   --env-file PATH       Copy this file to <install>/.env before compose up
 
 Environment overrides (optional):
-  APP_BASE_PATH         Default /dcffeedback
+  APP_BASE_PATH         Default /feedback
   APP_HTTP_PORT         Default 4020
   HF_API_TOKEN          Hugging Face token (optional)
 EOF
@@ -121,18 +121,18 @@ find_env_example() {
 write_minimal_env() {
   local dest="$1"
   cat > "${dest}" <<'EOF'
-APP_BASE_PATH=/dcffeedback
+APP_BASE_PATH=/feedback
 APP_HTTP_PORT=4020
 PORT=8080
 NODE_ENV=production
 DATABASE_URL=sqlite://./data/feedback.db
 CORS_ORIGIN=*
-PUBLIC_SURVEY_BASE_URL=/dcffeedback/survey
-VITE_BASE_PATH=/dcffeedback/
-VITE_API_BASE_URL=/dcffeedback/v1
+PUBLIC_SURVEY_BASE_URL=/feedback/survey
+VITE_BASE_PATH=/feedback/
+VITE_API_BASE_URL=/feedback/v1
 DEMO_FAST_TRIGGERS=true
 LLM_PROVIDER=huggingface
-HF_MODEL=Qwen/Qwen2.5-7B-Instruct
+HF_MODEL=Qwen/Qwen2.5-7B-Instruct:featherless-ai
 HF_API_BASE=https://router.huggingface.co/v1
 HF_API_TOKEN=
 HUGGINGFACE_API_KEY=

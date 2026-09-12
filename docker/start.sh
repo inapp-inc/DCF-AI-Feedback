@@ -2,10 +2,10 @@
 set -e
 
 # Alpine nginx uses http.d — never write to conf.d (old bind-mounts often leave a directory there).
-APP_BASE="${APP_BASE_PATH:-/dcffeedback}"
+APP_BASE="${APP_BASE_PATH:-/feedback}"
 APP_BASE="${APP_BASE%/}"
 if [ -z "${APP_BASE}" ] || [ "${APP_BASE}" = "/" ]; then
-  APP_BASE="/dcffeedback"
+  APP_BASE="/feedback"
 fi
 
 # Remove legacy broken mount: host bind-mount could create default.conf as a directory.

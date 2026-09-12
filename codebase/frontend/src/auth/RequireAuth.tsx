@@ -20,8 +20,8 @@ export function RequireAuth({ platform }: RequireAuthProps) {
   return <Outlet />;
 }
 
-export function RequireIFamilyNetAuth() {
-  return <RequireAuth platform="ifamilynet" />;
+export function RequireWorkflowAuth() {
+  return <RequireAuth platform="workflow" />;
 }
 
 export function RequireAdminAuth() {

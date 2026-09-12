@@ -4,7 +4,7 @@ import { getAiHealth } from "../services/hfInferenceService.js";
 const router = Router();
 
 router.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "dcf-feedback-api" });
+  res.json({ status: "ok", service: "feedback-api" });
 });
 
 router.get("/ai/health", (_req, res) => {

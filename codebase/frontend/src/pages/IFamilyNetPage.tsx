@@ -30,7 +30,7 @@ const TRIGGERS: Record<string, TriggerConfig> = {
     subtitle: "Mandated reporter feedback",
     templateId: "tpl_mr_v1",
     userGroup: "mandated_reporter",
-    triggerRef: "51A-2026-04412",
+    triggerRef: "INT-2026-04412",
   },
   vol: {
     key: "vol",
@@ -54,7 +54,7 @@ const TRIGGERS: Record<string, TriggerConfig> = {
     subtitle: "Attorney · Service plan review",
     templateId: "tpl_att_v1",
     userGroup: "attorney",
-    triggerRef: "MA-2026-1182-spr",
+    triggerRef: "CS-2026-1182-spr",
   },
   "att-dp": {
     key: "att-dp",
@@ -62,7 +62,7 @@ const TRIGGERS: Record<string, TriggerConfig> = {
     subtitle: "Attorney · Document production",
     templateId: "tpl_att_v1",
     userGroup: "attorney",
-    triggerRef: "MA-2026-1182-dp",
+    triggerRef: "CS-2026-1182-dp",
   },
   closure: {
     key: "closure",
@@ -102,7 +102,7 @@ type WorkflowSectionId = (typeof WORKFLOW_STAGES)[number];
 
 const NAV_STAGES: Array<{ id: WorkflowSectionId; label: string; num: number }> = [
   { id: "section-intake", label: "Hotline contact", num: 1 },
-  { id: "section-intake", label: "51A filing", num: 2 },
+  { id: "section-intake", label: "Intake filing", num: 2 },
   { id: "section-investigation", label: "Investigation", num: 3 },
   { id: "section-placement", label: "Placement", num: 4 },
   { id: "section-legal", label: "Legal process", num: 5 },
@@ -173,7 +173,7 @@ function StatusPill({ status }: { status: string }) {
   );
 }
 
-export function IFamilyNetPage() {
+export function WorkflowPage() {
   const [triggerJobs, setTriggerJobs] = useState<Array<Record<string, unknown>>>([]);
   const [activeInstanceId, setActiveInstanceId] = useState("");
   const [submissionId, setSubmissionId] = useState("");
@@ -415,9 +415,9 @@ export function IFamilyNetPage() {
           <div style={{ fontSize: 12, color: C.textLight, textTransform: "uppercase", letterSpacing: "0.08em" }}>Case record</div>
           <h1 style={{ fontSize: 27, margin: "6px 0 8px", color: C.navy, fontWeight: 700 }}>Johnson family — active case</h1>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, fontSize: 13, color: C.textMid, alignItems: "center" }}>
-            <span style={{ fontWeight: 700 }}>MA-2026-0847</span>
+            <span style={{ fontWeight: 700 }}>CS-2026-0847</span>
             <StatusPill status="In process" />
-            <span>Boston North</span>
+            <span>North Region</span>
             <span>Opened March 14, 2026</span>
             <span>Assigned caseworker: J. Torres</span>
           </div>
@@ -448,7 +448,7 @@ export function IFamilyNetPage() {
         <section id="section-intake" className="card" style={{ marginBottom: 14 }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 12, flexWrap: "wrap" }}>
             <span style={{ fontSize: 12, color: C.textLight, textTransform: "uppercase" }}>Stage 1-2</span>
-            <h2 style={{ fontSize: 19, color: C.navy, fontWeight: 700 }}>51A Intake & Filing</h2>
+            <h2 style={{ fontSize: 19, color: C.navy, fontWeight: 700 }}>Intake report & filing</h2>
             <StatusPill status="Completed" />
             <span style={{ fontSize: 13, color: C.textMid }}>Completed March 14, 2026</span>
           </div>
@@ -456,8 +456,8 @@ export function IFamilyNetPage() {
             <div className="card" style={{ padding: 14 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>
                 {[
-                  ["Filing reference", "51A-2026-04412"],
-                  ["Filing outcome", "51A Accepted"],
+                  ["Filing reference", "INT-2026-04412"],
+                  ["Filing outcome", "Accepted for investigation"],
                   ["Reporter category", "Healthcare professional"],
                   ["Screener assigned", "D. Nguyen"],
                 ].map(([label, value]) => (
@@ -472,7 +472,7 @@ export function IFamilyNetPage() {
               triggerKey="mr"
               accentColor={C.purple}
               accentBg={C.purplePale}
-              dispatchNote="Auto-dispatched 7 days after 51A filing."
+              dispatchNote="Auto-dispatched 7 days after intake filing."
             />
           </div>
           {renderProceedButton("section-intake")}
@@ -629,7 +629,7 @@ export function IFamilyNetPage() {
                 Closure feedback triggers dispatch to foster parent and attorney when closure starts.
               </p>
               <p style={{ fontSize: 13, color: C.textMid, marginTop: 8 }}>
-                AI generates closure evidence summary for CFSR alignment.
+                AI generates a closure evidence summary for quality-review alignment.
               </p>
             </div>
             <div className="card" style={{ padding: 14, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -672,7 +672,7 @@ export function IFamilyNetPage() {
           </div>
           <div style={{ display: "grid", gap: 10 }}>
             {[
-              { title: "51A filed — investigation accepted",          meta: "Mar 14, 2026 · 09:41", status: "Completed"  },
+              { title: "Intake report filed — investigation accepted",          meta: "Mar 14, 2026 · 09:41", status: "Completed"  },
               { title: "Mandated reporter survey dispatched",          meta: "Mar 21, 2026 · 08:00", status: "Completed"  },
               { title: "Placement Day 30 survey submitted",            meta: "Apr 27, 2026 · 10:15", status: "Completed"  },
               { title: "Legal milestone — service plan review due",    meta: "May 24, 2026 · 08:00", status: "Overdue"    },

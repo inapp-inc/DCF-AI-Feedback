@@ -1,4 +1,4 @@
-# DCF AI Feedback Platform (Demo)
+# Feedback Analytics (Demo)
 
 Local-first feedback platform with SQLite backend, React frontend, and Hugging Face inference integration.
 
@@ -61,12 +61,12 @@ Single container (`app`): internal nginx uses **`/etc/nginx/http.d/`** (not `con
 sudo ./scripts/deploy-docker.sh dist/dcf-feedback-docker.zip
 ```
 
-Point your host nginx at `http://127.0.0.1:4020/dcffeedback/`. Details: `docker/CONFIG.md`.
+Point your host nginx at `http://127.0.0.1:4020/feedback/`. Details: `docker/CONFIG.md`.
 
 ## Project layout
 
 - `codebase/backend` — Express + SQLite API
-- `codebase/frontend` — React apps (iFamilyNet + Admin)
+- `codebase/frontend` — React apps (staff workflow + Admin)
 - `docker/` — `Dockerfile.app`, `nginx.conf`, `nginx-app.conf.template`, `start.sh`
 - `openspec/` — specifications and OpenAPI contract
 - `Discovery and Design/` — SEED units and SDD artifacts

@@ -21,7 +21,7 @@ const STAFF_PLATFORMS: {
   icon: string;
 }[] = [
   {
-    id: "ifamilynet",
+    id: "workflow",
     badge: "Workflow",
     title: "Client's core solution",
     description: "Case workflow, trigger surveys, dispatch, and milestone feedback.",

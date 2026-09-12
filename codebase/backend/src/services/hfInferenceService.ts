@@ -21,7 +21,7 @@ function extractEntities(text: string): Array<{ type: string; value: string }> {
   const entities: Array<{ type: string; value: string }> = [];
   const icwa = text.match(/\b(icwa|icpc)\b/i);
   if (icwa) entities.push({ type: "policy", value: icwa[0].toUpperCase() });
-  const office = text.match(/boston\s+north|western|central/i);
+  const office = text.match(/north\s+region|boston\s+north|western|central/i);
   if (office) entities.push({ type: "office", value: office[0] });
   return entities;
 }

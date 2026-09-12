@@ -6,7 +6,7 @@ info:
     Contract baseline for event-triggered feedback lifecycle, AI classification, and supervisor triage.
     Demo mode assumptions: static logins for auth, local-first runtime, SQLite-backed persistence.
     Hugging Face config baseline (adapted from DCF-Intake demo):
-    LLM_PROVIDER=huggingface, HF_MODEL=Qwen/Qwen2.5-7B-Instruct,
+    LLM_PROVIDER=huggingface, HF_MODEL=Qwen/Qwen2.5-7B-Instruct:featherless-ai,
     HF_API_BASE=https://router.huggingface.co/v1, LLM_REQUEST_TIMEOUT_MS=600000,
     token alias support via HF_API_TOKEN or HUGGINGFACE_API_KEY.
 servers:
@@ -926,7 +926,7 @@ components:
           enum: [huggingface]
         hfModel:
           type: string
-          default: Qwen/Qwen2.5-7B-Instruct
+          default: Qwen/Qwen2.5-7B-Instruct:featherless-ai
         hfApiBase:
           type: string
           default: https://router.huggingface.co/v1
