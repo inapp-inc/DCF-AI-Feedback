@@ -63,11 +63,23 @@ sudo ./scripts/deploy-docker.sh dist/dcf-feedback-docker.zip
 
 Point your host nginx at `http://127.0.0.1:4020/feedback/`. Details: `docker/CONFIG.md`.
 
+### Podman (local)
+
+Reusable files are in `podman/`. Same image as Docker (`docker/Dockerfile.app`), started with Compose.
+
+```powershell
+cd podman
+.\dcf-podman.ps1 build
+```
+
+Then in Podman Desktop: **Images → `dcf-feedback-app` → Run** (host **4020** → container **80**). Or `.\dcf-podman.ps1 up` to start from the CLI. Details: `podman/README.md`.
+
 ## Project layout
 
 - `codebase/backend` — Express + SQLite API
 - `codebase/frontend` — React apps (staff workflow + Admin)
 - `docker/` — `Dockerfile.app`, `nginx.conf`, `nginx-app.conf.template`, `start.sh`
+- `podman/` — local Compose file, env template, and `dcf-podman` helpers
 - `openspec/` — specifications and OpenAPI contract
 - `Discovery and Design/` — SEED units and SDD artifacts
 - `ifamilynet.html` — reference mockup (do not edit; replicate in frontend code)

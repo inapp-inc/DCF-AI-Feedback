@@ -27,7 +27,22 @@ RUN npm run build
 FROM node:20-alpine
 RUN apk add --no-cache python3 make g++ nginx wget
 WORKDIR /app/backend
-ENV NODE_ENV=production
+ENV NODE_ENV=production \
+    PORT=8080 \
+    APP_BASE_PATH=/feedback \
+    DATABASE_URL=sqlite://./data/feedback.db \
+    CORS_ORIGIN=* \
+    PUBLIC_SURVEY_BASE_URL=/feedback/survey \
+    DEMO_FAST_TRIGGERS=true \
+    LLM_PROVIDER=huggingface \
+    HF_MODEL=Qwen/Qwen2.5-7B-Instruct:featherless-ai \
+    HF_API_BASE=https://router.huggingface.co/v1 \
+    LLM_REQUEST_TIMEOUT_MS=600000 \
+    LLM_MAX_RETRIES=2 \
+    LLM_RETRY_BASE_DELAY_MS=1200
+LABEL org.opencontainers.image.title="DCF Feedback Analytics" \
+      org.opencontainers.image.description="Demo UI+API. In Podman Desktop: publish 4020:80, volume /app/backend/data, open /feedback/." \
+      io.podman.desktop.name="DCF Feedback"
 COPY codebase/backend/package.json codebase/backend/package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=be-build /be/dist ./dist

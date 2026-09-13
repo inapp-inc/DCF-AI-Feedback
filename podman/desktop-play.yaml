@@ -1,0 +1,56 @@
+# Play this in Podman Desktop after building the image:
+#   Kubernetes → Play YAML → select this file → Play
+# Image must already exist: localhost/dcf-feedback-app:latest
+#   .\dcf-podman.ps1 build
+#
+# Adds host port 4020 and a persistent SQLite volume.
+# Add HF_API_TOKEN in Desktop (container → kebab menu → Edit/Generate) if you want live AI.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dcf-feedback-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dcf-feedback
+  labels:
+    app: dcf-feedback
+spec:
+  containers:
+    - name: app
+      image: localhost/dcf-feedback-app:latest
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 80
+          hostPort: 4020
+      env:
+        - name: NODE_ENV
+          value: production
+        - name: PORT
+          value: "8080"
+        - name: APP_BASE_PATH
+          value: /feedback
+        - name: DATABASE_URL
+          value: sqlite://./data/feedback.db
+        - name: CORS_ORIGIN
+          value: "*"
+        - name: PUBLIC_SURVEY_BASE_URL
+          value: /feedback/survey
+        - name: DEMO_FAST_TRIGGERS
+          value: "true"
+      volumeMounts:
+        - name: data
+          mountPath: /app/backend/data
+  volumes:
+    - name: data
+      persistentVolumeClaim:
+        claimName: dcf-feedback-data

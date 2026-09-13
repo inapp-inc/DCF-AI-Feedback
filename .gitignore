@@ -1,5 +1,6 @@
 # Deployment secrets (HF token) — use docker/.env for packaging only
 docker/.env
+podman/.env
 
 # Archives
 dist/

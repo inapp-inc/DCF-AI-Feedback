@@ -1,0 +1,33 @@
+# Local Podman stack for Feedback Analytics.
+# Reuses docker/Dockerfile.app (nginx UI + Express API in one container).
+#
+# Run from this folder via ./dcf-podman.ps1 up  (Windows)
+#                    or ./dcf-podman.sh up     (macOS / Linux / WSL)
+#
+# After APP_BASE_PATH / VITE_* changes: rebuild (dcf-podman rebuild).
+
+name: dcf-feedback
+
+services:
+  app:
+    container_name: dcf-feedback-app
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.app
+      args:
+        VITE_BASE_PATH: ${VITE_BASE_PATH:-/feedback/}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/feedback/v1}
+    image: localhost/dcf-feedback-app:latest
+    ports:
+      - "${APP_HTTP_PORT:-4020}:80"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: "8080"
+    volumes:
+      - dcf-feedback-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  dcf-feedback-data:
