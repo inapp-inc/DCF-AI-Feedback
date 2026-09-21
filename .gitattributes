@@ -1,0 +1,6 @@
+# Shell scripts must be LF. Alpine/Ubuntu treat CRLF shebangs as "not found".
+*.sh text eol=lf
+*.cjs text eol=lf
+docker/start.sh text eol=lf
+start.sh text eol=lf
+run-production.sh text eol=lf

@@ -8,8 +8,12 @@ async function main() {
   await runMigrations();
   const app = createApp();
   startBackgroundJobs();
-  app.listen(config.port, () => {
-    console.log(`Feedback Analytics Solution API listening on http://localhost:${config.port}`);
+  const base = config.appBasePath || "";
+  app.listen(config.port, config.host, () => {
+    console.log(
+      `Feedback Analytics Solution API listening on http://${config.host}:${config.port}${base}/`,
+    );
+    console.log(`Health: http://${config.host}:${config.port}${base}/v1/health`);
     console.log(`CORS origin: ${config.corsOrigin}`);
   });
 }

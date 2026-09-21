@@ -69,10 +69,24 @@ Reusable files are in `podman/`. Same image as Docker (`docker/Dockerfile.app`),
 
 ```powershell
 cd podman
-.\dcf-podman.ps1 build
+.\dcf-podman.cmd build
 ```
 
 Then in Podman Desktop: **Images → `dcf-feedback-app` → Run** (host **4020** → container **80**). Or `.\dcf-podman.ps1 up` to start from the CLI. Details: `podman/README.md`.
+
+### PM2 on Ubuntu (no Docker)
+
+Same app behind host nginx, managed by PM2. Stage a zip, copy to the VM, unzip and run:
+
+```bash
+./deploy/create-archive.sh
+# zip the contents of dist/dcf-feedback-staging/
+sudo unzip -o dcf-feedback-linux.zip -d /var/www/dcf-feedback
+cd /var/www/dcf-feedback
+sudo bash start.sh
+```
+
+UI: `https://client-demo.inapp.com/feedback/` (loopback `http://127.0.0.1:14020/feedback/`). Runbook: `Docs/DEPLOY-RUNBOOK.md`. Server cheat sheet: `README-SERVER.txt`.
 
 ## Project layout
 
@@ -80,6 +94,7 @@ Then in Podman Desktop: **Images → `dcf-feedback-app` → Run** (host **4020**
 - `codebase/frontend` — React apps (staff workflow + Admin)
 - `docker/` — `Dockerfile.app`, `nginx.conf`, `nginx-app.conf.template`, `start.sh`
 - `podman/` — local Compose file, env template, and `dcf-podman` helpers
+- `deploy/` — Ubuntu PM2 + nginx zip pipeline (`create-archive.sh`, `ecosystem.config.cjs`)
 - `openspec/` — specifications and OpenAPI contract
 - `Discovery and Design/` — SEED units and SDD artifacts
-- `ifamilynet.html` — reference mockup (do not edit; replicate in frontend code)
+- `start.sh`, `run-production.sh`, `README-SERVER.txt` — Ubuntu unzip-and-run (PM2)

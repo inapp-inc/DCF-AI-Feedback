@@ -8,6 +8,9 @@ ENV_FILE="${HERE}/.env"
 ENV_EXAMPLE="${HERE}/.env.example"
 COMPOSE_FILE="${HERE}/compose.yml"
 DOCKER_ENV="${REPO_ROOT}/docker/.env"
+CONTAINER_NAME="dcf-feedback-app"
+IMAGE_NAME="localhost/dcf-feedback-app:latest"
+VOLUME_NAME="dcf-feedback-data"
 
 COMMAND="${1:-help}"
 shift || true
@@ -35,12 +38,31 @@ need_podman() {
   }
 }
 
-compose() {
-  # On Windows/WSL, compose needs a running machine — call ensure_ready first.
-  if command -v podman-compose >/dev/null 2>&1 && ! podman compose version >/dev/null 2>&1; then
-    (cd "${HERE}" && podman-compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@")
+start_container() {
+  local port
+  port="$(env_value APP_HTTP_PORT 4020)"
+  log "Starting ${CONTAINER_NAME} from ${IMAGE_NAME} (podman run; Compose not required)"
+  podman rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  podman run -d \
+    --name "${CONTAINER_NAME}" \
+    --replace \
+    -p "${port}:80" \
+    --env-file "${ENV_FILE}" \
+    -e NODE_ENV=production \
+    -e PORT=8080 \
+    -v "${VOLUME_NAME}:/app/backend/data" \
+    --restart unless-stopped \
+    "${IMAGE_NAME}"
+}
+
+stop_container() {
+  local remove_volume="${1:-0}"
+  podman rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
+  if [[ "${remove_volume}" -eq 1 ]]; then
+    podman volume rm -f "${VOLUME_NAME}" >/dev/null 2>&1 || true
+    log "Removed volume ${VOLUME_NAME}"
   else
-    (cd "${HERE}" && podman compose -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@")
+    log "Stopped ${CONTAINER_NAME}. Volume ${VOLUME_NAME} was kept."
   fi
 }
 
@@ -173,7 +195,7 @@ Feedback Analytics — local Podman helper
 Usage:
   ./dcf-podman.sh build           Build image only (then click-to-run in Desktop)
   ./dcf-podman.sh build --no-cache
-  ./dcf-podman.sh up              Build (if needed) and start via Compose
+  ./dcf-podman.sh up              Build (if needed) and start with podman run
   ./dcf-podman.sh up --no-build   Start without rebuilding
   ./dcf-podman.sh up --no-smoke   Skip the health check
   ./dcf-podman.sh rebuild         Rebuild with --no-cache, then start
@@ -200,13 +222,10 @@ case "${COMMAND}" in
     podman machine list || true
     echo
     log "images (dcf-feedback-app)"
-    podman images dcf-feedback-app || true
+    podman images "${IMAGE_NAME}" || true
     echo
-    if [[ -f "${ENV_FILE}" ]]; then
-      compose ps
-    else
-      log "No podman/.env yet — run ./dcf-podman.sh build  or  ./dcf-podman.sh up"
-    fi
+    log "container ${CONTAINER_NAME}"
+    podman ps -a --filter "name=${CONTAINER_NAME}" || true
     ;;
   build)
     need_podman
@@ -220,17 +239,16 @@ case "${COMMAND}" in
     ensure_ready
     ensure_env
     if [[ "${FOLLOW}" -eq 1 ]]; then
-      compose logs -f --tail 200
+      podman logs -f --tail 200 "${CONTAINER_NAME}"
     else
-      compose logs --tail 200
+      podman logs --tail 200 "${CONTAINER_NAME}"
     fi
     ;;
   down)
     need_podman
     ensure_ready
     ensure_env
-    compose down
-    log "Stopped. SQLite volume dcf-feedback-data was kept."
+    stop_container
     ;;
   up)
     need_podman
@@ -240,7 +258,7 @@ case "${COMMAND}" in
     if [[ "${NO_BUILD}" -eq 0 ]]; then
       image_build
     fi
-    compose up -d
+    start_container
     if [[ "${NO_SMOKE}" -eq 0 ]]; then
       wait_healthy
     fi
@@ -252,7 +270,7 @@ case "${COMMAND}" in
     ensure_env
     hf_notice
     image_build 1
-    compose up -d
+    start_container
     if [[ "${NO_SMOKE}" -eq 0 ]]; then
       wait_healthy
     fi
@@ -263,9 +281,9 @@ case "${COMMAND}" in
     ensure_ready
     ensure_env
     log "Removing containers and the SQLite volume (demo data will be re-seeded on start)..."
-    compose down -v
+    stop_container 1
     image_build
-    compose up -d
+    start_container
     if [[ "${NO_SMOKE}" -eq 0 ]]; then
       wait_healthy
     fi

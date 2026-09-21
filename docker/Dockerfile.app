@@ -51,9 +51,13 @@ COPY --from=fe-build /fe/dist /usr/share/nginx/html
 COPY docker/nginx.conf /etc/nginx/nginx.conf
 COPY docker/nginx-app.conf.template /etc/nginx/nginx-app.conf.template
 COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh \
+RUN sed -i 's/\r$//' /start.sh \
+  && chmod +x /start.sh \
   && mkdir -p /etc/nginx/http.d \
   && rm -rf /etc/nginx/http.d/default.conf /etc/nginx/conf.d 2>/dev/null || true
 EXPOSE 80
 HEALTHCHECK CMD wget -qO- http://127.0.0.1:8080/v1/health || exit 1
-CMD ["/start.sh"]
+# Invoke via /bin/sh so Windows CRLF shebangs cannot break Alpine, and so
+# the node image entrypoint is not used (Desktop "Command: ./start.sh" would miss /app/backend).
+ENTRYPOINT ["/bin/sh", "/start.sh"]
+CMD []

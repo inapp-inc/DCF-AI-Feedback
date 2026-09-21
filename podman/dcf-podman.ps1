@@ -1,15 +1,4 @@
 #Requires -Version 5.1
-<#
-.SYNOPSIS
-  Reusable local Podman helper for Feedback Analytics.
-
-.EXAMPLE
-  .\dcf-podman.ps1 up
-  .\dcf-podman.ps1 logs
-  .\dcf-podman.ps1 down
-  .\dcf-podman.ps1 reset
-#>
-[CmdletBinding()]
 param(
   [Parameter(Position = 0)]
   [ValidateSet("up", "down", "logs", "status", "reset", "rebuild", "build", "urls", "help")]
@@ -28,8 +17,12 @@ $EnvFile = Join-Path $Here ".env"
 $EnvExample = Join-Path $Here ".env.example"
 $ComposeFile = Join-Path $Here "compose.yml"
 $DockerEnv = Join-Path $RepoRoot "docker\.env"
+$ContainerName = "dcf-feedback-app"
+$ImageName = "localhost/dcf-feedback-app:latest"
+$VolumeName = "dcf-feedback-data"
 
-function Write-Step([string]$Message) {
+function Write-Step {
+  param([string]$Message)
   Write-Host "[podman] $Message"
 }
 
@@ -55,31 +48,44 @@ function Assert-Podman {
   }
 }
 
-function Get-ComposeInvocation {
-  # On Windows, `podman compose` talks to the machine. Call Ensure-PodmanReady first.
-  & podman compose version 2>$null | Out-Null
-  if ($LASTEXITCODE -eq 0) {
-    return @{ Exe = "podman"; Prefix = @("compose") }
+function Invoke-Podman {
+  param(
+    [switch]$Quiet,
+    [Parameter(ValueFromRemainingArguments = $true)][string[]]$PodmanArgs
+  )
+  $prev = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    if ($Quiet) {
+      & podman @PodmanArgs 2>&1 | Out-Null
+    }
+    else {
+      & podman @PodmanArgs | ForEach-Object { Write-Host $_ }
+    }
+    return $LASTEXITCODE
   }
-  if (Get-Command podman-compose -ErrorAction SilentlyContinue) {
-    return @{ Exe = "podman-compose"; Prefix = @() }
+  finally {
+    $ErrorActionPreference = $prev
   }
-  # Podman 4+ ships compose; the version check fails only when the machine is down.
-  return @{ Exe = "podman"; Prefix = @("compose") }
+}
+
+function Test-ComposeAvailable {
+  $code = Invoke-Podman -Quiet @("compose", "version")
+  if ($code -eq 0) { return $true }
+  return [bool](Get-Command podman-compose -ErrorAction SilentlyContinue)
 }
 
 function Invoke-Compose {
   param([Parameter(ValueFromRemainingArguments = $true)][string[]]$ComposeArgs)
-  $compose = Get-ComposeInvocation
-  $all = @()
-  $all += $compose.Prefix
-  $all += @("-f", $ComposeFile, "--env-file", $EnvFile)
-  $all += $ComposeArgs
+  if (-not (Test-ComposeAvailable)) {
+    throw "Compose plugin is not installed. This helper uses 'podman run' instead; you do not need Compose."
+  }
+  $all = @("compose", "-f", $ComposeFile, "--env-file", $EnvFile) + $ComposeArgs
   Push-Location $Here
   try {
-    & $compose.Exe @all
-    if ($LASTEXITCODE -ne 0) {
-      throw "Compose command failed: $($compose.Exe) $($all -join ' ')"
+    $code = Invoke-Podman @all
+    if ($code -ne 0) {
+      throw "Compose command failed: podman $($all -join ' ')"
     }
   }
   finally {
@@ -87,13 +93,56 @@ function Invoke-Compose {
   }
 }
 
+function Start-AppContainer {
+  $port = Get-DotEnvValue $EnvFile "APP_HTTP_PORT" "4020"
+  Write-Step "Starting $ContainerName from $ImageName (podman run; Compose not required)"
+  $null = Invoke-Podman -Quiet @("rm", "-f", $ContainerName)
+  $code = Invoke-Podman @(
+    "run", "-d",
+    "--name", $ContainerName,
+    "--replace",
+    "-p", "${port}:80",
+    "--env-file", $EnvFile,
+    "-e", "NODE_ENV=production",
+    "-e", "PORT=8080",
+    "-v", "${VolumeName}:/app/backend/data",
+    "--restart", "unless-stopped",
+    $ImageName
+  )
+  if ($code -ne 0) {
+    throw "podman run failed. Confirm the image exists: podman images $ImageName"
+  }
+}
+
+function Stop-AppContainer {
+  param([switch]$RemoveVolume)
+  $null = Invoke-Podman -Quiet @("rm", "-f", $ContainerName)
+  if ($RemoveVolume) {
+    $null = Invoke-Podman -Quiet @("volume", "rm", "-f", $VolumeName)
+    Write-Step "Removed volume $VolumeName"
+  }
+  else {
+    Write-Step "Stopped $ContainerName. Volume $VolumeName was kept."
+  }
+}
+
+function Show-AppLogs {
+  param([switch]$FollowLogs)
+  if ($FollowLogs) {
+    $null = Invoke-Podman @("logs", "-f", "--tail", "200", $ContainerName)
+  }
+  else {
+    $null = Invoke-Podman @("logs", "--tail", "200", $ContainerName)
+  }
+}
+
 function Ensure-PodmanReady {
-  & podman info 2>$null | Out-Null
-  if ($LASTEXITCODE -eq 0) { return }
+  $code = Invoke-Podman -Quiet @("info")
+  if ($code -eq 0) { return }
 
   Write-Step "Podman engine is not ready. Starting the default machine..."
-  & podman machine start
-  if ($LASTEXITCODE -ne 0) {
+  $start = Invoke-Podman @("machine", "start")
+  if ($start -ne 0) {
     throw "Could not start the Podman machine. Open Podman Desktop, start the machine, then retry."
   }
 }
@@ -144,7 +193,7 @@ function Assert-HfTokenNotice {
   if (-not $token) {
     Write-Host ""
     Write-Host "WARN: HF_API_TOKEN is empty in podman/.env. The UI still works; AI uses fallback heuristics."
-    Write-Host "      Add a token from https://huggingface.co/settings/tokens and run: .\dcf-podman.ps1 up"
+    Write-Host "      Add a token from https://huggingface.co/settings/tokens and run: .\dcf-podman.cmd up"
     Write-Host ""
   }
 }
@@ -164,21 +213,21 @@ function Wait-Healthy {
       Start-Sleep -Seconds 5
     }
   }
-  throw "App did not become healthy. Check: .\dcf-podman.ps1 logs"
+  throw "App did not become healthy. Check: .\dcf-podman.cmd logs"
 }
 
 function Show-DesktopRunHints {
   Write-Host ""
   Write-Host "Image is on the Podman machine. Click-to-run in Podman Desktop:"
-  Write-Host "  1. Images → dcf-feedback-app (tag latest) → Run / play button"
+  Write-Host "  1. Images -> dcf-feedback-app (tag latest) -> Run"
   Write-Host "  2. Container name:  dcf-feedback-app"
-  Write-Host "  3. Port mapping:    Host 4020  →  Container 80"
-  Write-Host "  4. Volume:          dcf-feedback-data  →  /app/backend/data"
+  Write-Host "  3. Port mapping:    Host 4020 -> Container 80"
+  Write-Host "  4. Volume:          dcf-feedback-data -> /app/backend/data"
   Write-Host "  5. Optional env:    HF_API_TOKEN=hf_..."
   Write-Host "  6. Start, then open http://127.0.0.1:4020/feedback/"
   Write-Host ""
   Write-Host "Or play the ready-made pod (ports + volume already set):"
-  Write-Host "  Kubernetes → Play YAML → $Here\desktop-play.yaml"
+  Write-Host "  Kubernetes -> Play YAML -> $Here\desktop-play.yaml"
   Write-Host ""
 }
 
@@ -203,35 +252,33 @@ function Invoke-ImageBuild {
   Write-Step "Building dcf-feedback-app:latest for Podman Desktop (this can take several minutes the first time)"
   & podman @buildArgs
   if ($LASTEXITCODE -ne 0) {
-    throw "Image build failed. If the machine ran out of memory, raise RAM in Podman Desktop → Settings → Resources."
+    throw "Image build failed. If the machine ran out of memory, raise RAM in Podman Desktop -> Settings -> Resources."
   }
   Write-Step "Tagged: dcf-feedback-app:latest  and  localhost/dcf-feedback-app:latest"
   & podman images --format "table {{.Repository}}\t{{.Tag}}\t{{.ID}}\t{{.Size}}" dcf-feedback-app
 }
 
 function Show-Help {
-  @"
-Feedback Analytics — local Podman helper
-
-Usage:
-  .\dcf-podman.ps1 build         Build image only (then click-to-run in Desktop)
-  .\dcf-podman.ps1 build -NoCache
-  .\dcf-podman.ps1 up            Build (if needed) and start via Compose
-  .\dcf-podman.ps1 up -NoBuild   Start without rebuilding
-  .\dcf-podman.ps1 up -NoSmoke   Skip the health check
-  .\dcf-podman.ps1 rebuild       Rebuild with --no-cache, then start
-  .\dcf-podman.ps1 down          Stop and remove containers (keeps SQLite volume)
-  .\dcf-podman.ps1 reset         Stop, delete the data volume, then start fresh
-  .\dcf-podman.ps1 logs          Show recent logs
-  .\dcf-podman.ps1 logs -Follow  Follow logs
-  .\dcf-podman.ps1 status        Container / machine / image status
-  .\dcf-podman.ps1 urls          Print local URLs
-
-Click-to-run later:
-  1. .\dcf-podman.ps1 build
-  2. Podman Desktop → Images → dcf-feedback-app → Run
-     Host port 4020 → container 80; volume /app/backend/data
-"@ | Write-Host
+  Write-Host "Feedback Analytics - local Podman helper"
+  Write-Host ""
+  Write-Host "Usage:"
+  Write-Host "  .\dcf-podman.cmd build         Build image only (then click-to-run in Desktop)"
+  Write-Host "  .\dcf-podman.cmd build -NoCache"
+  Write-Host "  .\dcf-podman.cmd up            Build (if needed) and start with podman run"
+  Write-Host "  .\dcf-podman.cmd up -NoBuild   Start without rebuilding"
+  Write-Host "  .\dcf-podman.cmd up -NoSmoke   Skip the health check"
+  Write-Host "  .\dcf-podman.cmd rebuild       Rebuild with --no-cache, then start"
+  Write-Host "  .\dcf-podman.cmd down          Stop and remove containers (keeps SQLite volume)"
+  Write-Host "  .\dcf-podman.cmd reset         Stop, delete the data volume, then start fresh"
+  Write-Host "  .\dcf-podman.cmd logs          Show recent logs"
+  Write-Host "  .\dcf-podman.cmd logs -Follow  Follow logs"
+  Write-Host "  .\dcf-podman.cmd status        Container / machine / image status"
+  Write-Host "  .\dcf-podman.cmd urls          Print local URLs"
+  Write-Host ""
+  Write-Host "Click-to-run later:"
+  Write-Host "  1. .\dcf-podman.cmd build"
+  Write-Host "  2. Podman Desktop -> Images -> dcf-feedback-app -> Run"
+  Write-Host "     Host port 4020 -> container 80; volume /app/backend/data"
 }
 
 switch ($Command) {
@@ -250,14 +297,10 @@ switch ($Command) {
     & podman machine list
     Write-Host ""
     Write-Step "images (dcf-feedback-app)"
-    & podman images dcf-feedback-app
+    $null = Invoke-Podman @("images", $ImageName)
     Write-Host ""
-    if (Test-Path $EnvFile) {
-      Invoke-Compose @("ps")
-    }
-    else {
-      Write-Step "No podman/.env yet — run .\dcf-podman.ps1 build  or  .\dcf-podman.ps1 up"
-    }
+    Write-Step "container $ContainerName"
+    $null = Invoke-Podman @("ps", "-a", "--filter", "name=$ContainerName")
   }
   "build" {
     Assert-Podman
@@ -270,15 +313,14 @@ switch ($Command) {
     Assert-Podman
     Ensure-PodmanReady
     Ensure-EnvFile
-    if ($Follow) { Invoke-Compose @("logs", "-f", "--tail", "200") }
-    else { Invoke-Compose @("logs", "--tail", "200") }
+    if ($Follow) { Show-AppLogs -FollowLogs }
+    else { Show-AppLogs }
   }
   "down" {
     Assert-Podman
     Ensure-PodmanReady
     Ensure-EnvFile
-    Invoke-Compose @("down")
-    Write-Step "Stopped. SQLite volume dcf-feedback-data was kept."
+    Stop-AppContainer
   }
   "up" {
     Assert-Podman
@@ -286,7 +328,7 @@ switch ($Command) {
     Ensure-EnvFile
     Assert-HfTokenNotice
     if (-not $NoBuild) { Invoke-ImageBuild }
-    Invoke-Compose @("up", "-d")
+    Start-AppContainer
     if (-not $NoSmoke) { Wait-Healthy }
     Show-Urls
   }
@@ -296,7 +338,7 @@ switch ($Command) {
     Ensure-EnvFile
     Assert-HfTokenNotice
     Invoke-ImageBuild -ForceNoCache
-    Invoke-Compose @("up", "-d")
+    Start-AppContainer
     if (-not $NoSmoke) { Wait-Healthy }
     Show-Urls
   }
@@ -305,9 +347,9 @@ switch ($Command) {
     Ensure-PodmanReady
     Ensure-EnvFile
     Write-Step "Removing containers and the SQLite volume (demo data will be re-seeded on start)..."
-    Invoke-Compose @("down", "-v")
+    Stop-AppContainer -RemoveVolume
     Invoke-ImageBuild
-    Invoke-Compose @("up", "-d")
+    Start-AppContainer
     if (-not $NoSmoke) { Wait-Healthy }
     Show-Urls
   }

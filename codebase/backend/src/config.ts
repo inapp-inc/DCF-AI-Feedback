@@ -39,10 +39,23 @@ function resolveCorsOrigin(raw: string): boolean | string | string[] {
   return trimmed.split(",").map((o) => o.trim()).filter(Boolean);
 }
 
+function normalizeAppBasePath(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "/") return "";
+  const withLeading = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return withLeading.replace(/\/+$/, "");
+}
+
 export const config = {
-  port: parseInt(process.env.PORT ?? "8080", 10),
+  port: parseInt(process.env.PORT ?? process.env.HOST_PORT ?? "8080", 10),
+  /** Loopback in production (nginx in front). Override with HOST=0.0.0.0 if needed. */
+  host: process.env.HOST ?? "127.0.0.1",
   nodeEnv: process.env.NODE_ENV ?? "development",
   databaseUrl: process.env.DATABASE_URL ?? "sqlite://./data/feedback.db",
+  /** URL prefix such as /feedback. Empty means the app is at domain root. */
+  appBasePath: normalizeAppBasePath(process.env.APP_BASE_PATH ?? ""),
+  /** Built SPA directory (frontend dist). Empty skips static hosting. */
+  staticDir: (process.env.STATIC_DIR ?? "").trim(),
   /** Comma-separated origins, "*" or "true" to reflect the request origin (recommended behind reverse proxy). */
   corsOrigin: resolveCorsOrigin(process.env.CORS_ORIGIN ?? "http://localhost:5173"),
   /**

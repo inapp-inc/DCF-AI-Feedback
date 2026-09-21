@@ -10,7 +10,13 @@ This is the intended local loop: build a named image onto the Podman machine, th
 
 ```powershell
 cd C:\Projects\DCF-AI-Feedback\podman
-.\dcf-podman.ps1 build
+.\dcf-podman.cmd build
+```
+
+`dcf-podman.cmd` runs the PowerShell helper with `-ExecutionPolicy Bypass` for this script only. If you prefer the `.ps1` directly and Windows blocks it, use:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\dcf-podman.ps1 build
 ```
 
 That creates **`dcf-feedback-app:latest`** (also tagged `localhost/dcf-feedback-app:latest`). It does not start a container.
@@ -30,7 +36,7 @@ The image already has working defaults (`APP_BASE_PATH=/feedback`, SQLite path, 
 
 **Play YAML (ports + volume pre-filled)**
 
-1. `.\dcf-podman.ps1 build`
+1. `.\dcf-podman.cmd build`
 2. Podman Desktop → **Kubernetes** → **Play YAML** → `podman/desktop-play.yaml` → Play.
 
 Do not click Run on a half-built image. Wait until `.\dcf-podman.ps1 build` finishes and `.\dcf-podman.ps1 status` lists `dcf-feedback-app`.
@@ -80,20 +86,20 @@ chmod +x dcf-podman.sh
 
 | Task | Windows | Unix |
 |------|---------|------|
-| Build image only (Desktop click-to-run) | `.\dcf-podman.ps1 build` | `./dcf-podman.sh build` |
-| Start (build if needed) | `.\dcf-podman.ps1 up` | `./dcf-podman.sh up` |
-| Start without rebuild | `.\dcf-podman.ps1 up -NoBuild` | `./dcf-podman.sh up --no-build` |
-| Stop (keep SQLite) | `.\dcf-podman.ps1 down` | `./dcf-podman.sh down` |
-| Follow logs | `.\dcf-podman.ps1 logs -Follow` | `./dcf-podman.sh logs --follow` |
-| Status | `.\dcf-podman.ps1 status` | `./dcf-podman.sh status` |
-| Rebuild image | `.\dcf-podman.ps1 rebuild` | `./dcf-podman.sh rebuild` |
-| Wipe DB and re-seed | `.\dcf-podman.ps1 reset` | `./dcf-podman.sh reset` |
+| Build image only (Desktop click-to-run) | `.\dcf-podman.cmd build` | `./dcf-podman.sh build` |
+| Start (build if needed) | `.\dcf-podman.cmd up` | `./dcf-podman.sh up` |
+| Start without rebuild | `.\dcf-podman.cmd up -NoBuild` | `./dcf-podman.sh up --no-build` |
+| Stop (keep SQLite) | `.\dcf-podman.cmd down` | `./dcf-podman.sh down` |
+| Follow logs | `.\dcf-podman.cmd logs -Follow` | `./dcf-podman.sh logs --follow` |
+| Status | `.\dcf-podman.cmd status` | `./dcf-podman.sh status` |
+| Rebuild image | `.\dcf-podman.cmd rebuild` | `./dcf-podman.sh rebuild` |
+| Wipe DB and re-seed | `.\dcf-podman.cmd reset` | `./dcf-podman.sh reset` |
 
-Equivalent raw Compose (from this folder):
+Equivalent raw run (from this folder; Compose is not required):
 
 ```powershell
-podman compose -f compose.yml --env-file .env up -d --build
-podman compose -f compose.yml --env-file .env down
+podman run -d --name dcf-feedback-app --replace -p 4020:80 --env-file .env -v dcf-feedback-data:/app/backend/data --restart unless-stopped localhost/dcf-feedback-app:latest
+podman rm -f dcf-feedback-app
 ```
 
 ## URLs and demo logins
@@ -156,11 +162,30 @@ This folder does **not** replace the VM zip flow (`scripts/package-docker.sh` + 
 
 ## Troubleshooting
 
+**`running scripts is disabled on this system`**  
+Windows ExecutionPolicy is blocking `.ps1` files. Use `.\dcf-podman.cmd build` (does not change the policy), or:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\dcf-podman.ps1 build
+```
+
+To allow local scripts for your user account only: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+
 **`podman` is not recognized**  
 Install Podman Desktop, then open a new terminal. `podman --version` must work.
 
-**`podman compose version` fails**  
-Enable Compose in Podman Desktop, or install `podman-compose`. The helper scripts accept either.
+**`./start.sh not found`**  
+The image was built on Windows with CRLF in `docker/start.sh`. Alpine reports that as "not found". Rebuild after the Dockerfile fix (`ENTRYPOINT ["/bin/sh", "/start.sh"]` plus strip `\\r`):
+
+```powershell
+.\dcf-podman.cmd build
+.\dcf-podman.cmd up -NoBuild
+```
+
+In Podman Desktop Run, leave **Command** empty so the image entrypoint is used. Do not set `./start.sh`.
+
+**`looking up compose provider failed`**  
+You do not need Compose. `.\dcf-podman.cmd up -NoBuild` uses `podman run` on `localhost/dcf-feedback-app:latest`. `compose.yml` is optional if you later install the Compose plugin in Podman Desktop.
 
 **Machine not running / `Cannot connect to Podman socket`**  
 `podman-machine-default` is a WSL VM. Start it with `podman machine start` or the Desktop UI. `.\dcf-podman.ps1 up` tries this automatically. Confirm with `podman machine list` (`LAST UP` should be a timestamp, not `Never`).

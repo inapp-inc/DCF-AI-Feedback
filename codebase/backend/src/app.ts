@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { config } from "./config.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { requireAuth } from "./middleware/auth.js";
@@ -47,6 +49,35 @@ export function createApp() {
   api.use(adminApi);
 
   app.use("/v1", api);
+  if (config.appBasePath) {
+    app.use(`${config.appBasePath}/v1`, api);
+  }
+
+  if (config.staticDir && existsSync(config.staticDir)) {
+    const mount = config.appBasePath || "";
+    const staticMount = mount || "/";
+    app.use(staticMount, express.static(config.staticDir, { index: "index.html" }));
+    const spaHandler: express.RequestHandler = (req, res, next) => {
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        next();
+        return;
+      }
+      if (req.path.includes("/v1/") || req.path.endsWith("/v1")) {
+        next();
+        return;
+      }
+      res.sendFile(join(config.staticDir, "index.html"), (err) => {
+        if (err) next(err);
+      });
+    };
+    if (mount) {
+      app.get(mount, spaHandler);
+      app.get(`${mount}/*`, spaHandler);
+    } else {
+      app.get("/*", spaHandler);
+    }
+  }
+
   app.use(errorHandler);
   return app;
 }
